@@ -29,7 +29,7 @@ def phone_valid(phone: str) -> str:
     :param phone: string
     :return: string
     """
-    p = punctuation.replace('+', '')
+    p = punctuation.replace("+", "")
     if phone.isalpha() or len(set(p) & set(phone)) > 0:
         raise ValueError("Error. Invalid value for phone field")
     return phone

@@ -16,9 +16,10 @@ class AbstractRepository(ABC):
 
 
 class SQLAlchemyRepository(AbstractRepository):
-    '''
+    """
     Base CRUD class
-    '''
+    """
+
     model = None
 
     def __init__(self, session: AsyncSession):
@@ -60,9 +61,9 @@ class SQLAlchemyRepository(AbstractRepository):
             await self.session.refresh(res)
             return res
         except ValueError as e:
-            raise HTTPException(status_code=200, detail=str(e))
+            raise HTTPException(status_code=400, detail=str(e))
         except IntegrityError as e:
-            raise HTTPException(status_code=200, detail=str(e.orig))
+            raise HTTPException(status_code=400, detail=str(e.orig))
 
     async def edit_one(self, self_id: uuid.UUID, data: BaseModel) -> BaseModel:
         """
@@ -83,7 +84,7 @@ class SQLAlchemyRepository(AbstractRepository):
             await self.session.refresh(res)
             return res
         except ValueError as e:
-            raise HTTPException(status_code=200, detail=str(e))
+            raise HTTPException(status_code=400, detail=str(e))
 
     async def delete_one(self, self_id: uuid.UUID) -> Dict:
         """

@@ -1,21 +1,26 @@
 import datetime
-import uuid
-
+import enum
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, validates
-
-from src.apps.base import Base
+from src.db.db import Base
 from src.utils.validators import email_valid
+
+
+class UserPermission(enum.Enum):
+    admin = "Администратор"
+    moderator = "Модератор"
+    user = "Пользователь"
+    none = "Нет прав"
 
 
 class User(Base):
     __tablename__ = "user"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    hashed_password: Mapped[str]
+    password: Mapped[str]
     is_active: Mapped[bool] = mapped_column(default=True)
     registration_date: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow)
+    permission: Mapped[UserPermission] = mapped_column(default=UserPermission.none)
 
     def __str__(self):
         return self.email

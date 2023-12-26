@@ -10,7 +10,7 @@ DB_NAME = os.environ.get("DB_NAME")
 DB_PORT = os.environ.get("DB_PORT")
 
 # DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-DATABASE_URL = 'sqlite+aiosqlite:///sqlite.db'
+DATABASE_URL = "sqlite+aiosqlite:///test.db"
 
 POSTGRES_DB = os.environ.get("POSTGRES_DB")
 POSTGRES_USER = os.environ.get("POSTGRES_USER")
@@ -18,12 +18,12 @@ POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
 
 SQLADMIN_USER = os.environ.get("SQLADMIN_USER")
 SQLADMIN_PASSWORD = os.environ.get("SQLADMIN_PASSWORD")
+SQLADMIN_TOKEN = os.environ.get("SQLADMIN_TOKEN")
 
-SITE_URL = os.environ.get("SITE_URL")
-MEDIA_URL = f'{os.path.abspath(os.curdir)}/media'
+BASE_SITE_URL = os.environ.get("BASE_SITE_URL")
+MEDIA_URL = f"{os.path.abspath(os.curdir)}/media"
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
-ALGORITHM = os.environ.get("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES")
-
-SENTRY_TOKEN = os.environ.get("SENTRY_TOKEN")
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+JWT_ALGORITHM = os.environ.get("JWT_ALGORITHM")
+JWT_ACCESS_TOKEN_EXP_DAYS = float(os.environ.get("JWT_ACCESS_TOKEN_EXP_DAYS"))
+JWT_REFRESH_TOKEN_EXP_DAYS = float(os.environ.get("JWT_REFRESH_TOKEN_EXP_DAYS"))

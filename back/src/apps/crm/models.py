@@ -1,29 +1,26 @@
 import datetime
 import enum
 import uuid
-
 from typing import Optional, List
-
 from sqlalchemy import Column, ForeignKey, Table, String, UniqueConstraint, Text
 from sqlalchemy.orm import Mapped, mapped_column, validates, relationship
-
 from src.apps.auth.models import User
-from src.apps.base import Base
+from src.db.db import Base
 from src.utils.validators import name_valid, phone_valid
 
 
 class TaskStatus(enum.Enum):
-    todo = 'Запланировано'
-    doing = 'В работе'
-    done = 'На проверке'
-    release = 'Завершено'
+    todo = "Запланировано"
+    doing = "В работе"
+    done = "На проверке"
+    release = "Завершено"
 
 
 class TaskPriority(enum.Enum):
-    height = 'Высокий приоритет'
-    normal = 'Средний приоритет'
-    low = 'Низкий приоритет'
-    none = 'Приоритет не указан'
+    height = "Высокий приоритет"
+    normal = "Средний приоритет"
+    low = "Низкий приоритет"
+    none = "Приоритет не указан"
 
 
 task_project = Table(
@@ -44,7 +41,6 @@ task_employee = Table(
 class Department(Base):
     __tablename__ = "department"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(100), unique=True)
     employees: Mapped[Optional[List["Employee"]]] = relationship(back_populates="department")
 
@@ -55,7 +51,6 @@ class Department(Base):
 class Photo(Base):
     __tablename__ = "photo"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     url: Mapped[str]
     path: Mapped[str]
 
@@ -71,22 +66,20 @@ class Photo(Base):
 class Employee(Base):
     __tablename__ = "employee"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     last_name: Mapped[str] = mapped_column(String(100))
     first_name: Mapped[str] = mapped_column(String(100))
     second_name: Mapped[str] = mapped_column(String(100))
     phone: Mapped[str] = mapped_column(String(12), unique=True)
     photo: Mapped["Photo"] = relationship(back_populates="employee")
     my_tasks: Mapped[Optional[List["Task"]]] = relationship(back_populates="author")
-    tasks: Mapped[List["Task"]] = relationship(secondary=task_employee,
-                                               back_populates="employees",
-                                               lazy="selectin")
+    tasks: Mapped[Optional[List["Task"]]] = relationship(secondary=task_employee, back_populates="employees",
+                                                         lazy="selectin")
 
     department_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("department.id"))
     department: Mapped["Department"] = relationship(back_populates="employees")
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
-    user: Mapped["User"] = relationship(back_populates="employee", single_parent=True, lazy="selectin")
+    user: Mapped["User"] = relationship(single_parent=True, lazy="selectin")
 
     __table_args__ = (UniqueConstraint("user_id"),)
 
@@ -108,14 +101,12 @@ class Employee(Base):
 class Project(Base):
     __tablename__ = "project"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(100), unique=True)
-    description: Mapped[Optional[str]] = mapped_column(Text(1000))
+    description: Mapped[Optional[str]] = mapped_column(Text(1000), nullable=False, default='')
     is_active: Mapped[bool] = mapped_column(default=True)
 
-    tasks: Mapped[List["Task"]] = relationship(secondary=task_project,
-                                               back_populates="projects",
-                                               lazy="selectin")
+    tasks: Mapped[Optional[List["Task"]]] = relationship(secondary=task_project, back_populates="projects",
+                                                         lazy="selectin")
 
     def __str__(self):
         return self.title
@@ -124,9 +115,8 @@ class Project(Base):
 class Task(Base):
     __tablename__ = "task"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(100))
-    description: Mapped[Optional[str]] = mapped_column(Text(1000))
+    description: Mapped[Optional[str]] = mapped_column(Text(1000), nullable=False, default='')
     status: Mapped[TaskStatus] = mapped_column(default=TaskStatus.todo)
     priority: Mapped[TaskPriority] = mapped_column(default=TaskPriority.none)
     start: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow)
@@ -136,13 +126,9 @@ class Task(Base):
     author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employee.id"))
     author: Mapped["Employee"] = relationship(back_populates="tasks")
 
-    projects: Mapped[List["Project"]] = relationship(secondary=task_project,
-                                                     back_populates="tasks",
-                                                     lazy="selectin")
+    projects: Mapped[List["Project"]] = relationship(secondary=task_project, back_populates="tasks", lazy="selectin")
 
-    employees: Mapped[List["Employee"]] = relationship(secondary=task_employee,
-                                                       back_populates="tasks",
-                                                       lazy="selectin")
+    employees: Mapped[List["Employee"]] = relationship(secondary=task_employee, back_populates="tasks", lazy="selectin")
 
     def __str__(self):
         return self.title
