@@ -1,11 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from src.apps.auth.models import User
-from src.apps.auth.schemas import Token, UserLogin
-from src.apps.auth.utils import verified_user, authorize, create_refresh_jwt, \
-    create_access_jwt, pwd_context
+from src.apps.auth.schemas import UserLogin
+from src.apps.auth.utils import authorize, create_refresh_jwt, create_access_jwt, pwd_context, error_401
 from src.db.db import get_session
 
 router = APIRouter(
@@ -15,27 +13,21 @@ router = APIRouter(
 
 
 @router.post('/login')
-async def login(body: UserLogin, session: AsyncSession = Depends(get_session)):
-    error = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail='wrong credentials'
-    )
+async def login(data: UserLogin, session: AsyncSession = Depends(get_session)):
     # check if email exists
-    user = await session.get(User, body.email)
+    stmt = select(User).where(User.email == data.email)
+    user = await session.execute(stmt)
+    user = user.scalar_one()
     if not user:
-        raise error
+        raise error_401
     # check if password matches
-    matches = pwd_context.verify(body.password, user.password_hash)
+    matches = pwd_context.verify(data.password, user.password)
     if not matches:
-        raise error
-    # create jwt access token
-    data = {'user_name': user.email}
-    access_tkn = create_access_jwt(data)
-    # create jwt refresh token
-    refresh_tkn = create_refresh_jwt(data)
-    # store the refresh token in memory||database|| any storage
-    # in my case I am storing in users-table
-    await session.get(User, body.email).update(**{'refresh_token': refresh_tkn})
+        raise error_401
+    # create jwt tokens
+    data = {'email': user.email}
+    access_tkn = await create_access_jwt(data)
+    refresh_tkn = await create_refresh_jwt(data)
 
     return {
         'email': user.email,
@@ -48,8 +40,3 @@ async def login(body: UserLogin, session: AsyncSession = Depends(get_session)):
 @router.post('/refresh_token')
 async def refresh(token_data: dict = Depends(authorize)):
     return token_data
-
-
-@router.get('/me')
-async def protected_data(user: User = Depends(verified_user)):
-    return {'status': 'authorized', 'email': user.email}
