@@ -12,9 +12,7 @@ class AdminAuth(AuthenticationBackend):
         form = await request.form()
         username, password = form["username"], form["password"]
         if username == SQLADMIN_USER and password == SQLADMIN_PASSWORD:
-            access_token = await create_access_jwt(
-                data={"user": SQLADMIN_USER, "pass": SQLADMIN_PASSWORD}
-            )
+            access_token = await create_access_jwt(data={"user": SQLADMIN_USER, "pass": SQLADMIN_PASSWORD})
             request.session.update({"token": access_token})
             return True
         return False

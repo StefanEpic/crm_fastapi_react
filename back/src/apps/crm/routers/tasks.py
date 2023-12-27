@@ -21,9 +21,9 @@ router = APIRouter(
 @router.get("", response_model=List[TaskRead])
 @cache(expire=30)
 async def get_list(
-        pagination: Pagination = Depends(Pagination),
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+    pagination: Pagination = Depends(Pagination),
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     return await TaskRepository(session).get_list(pagination.skip, pagination.limit)
 
@@ -31,28 +31,28 @@ async def get_list(
 @router.get("/{task_id}", response_model=TaskReadWithProjectsAndEmployees)
 @cache(expire=30)
 async def get_one(
-        task_id: uuid.UUID,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+    task_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     return await TaskRepository(session).get_one(task_id)
 
 
 @router.post("", response_model=TaskRead)
 async def add_one(
-        task: TaskCreate,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+    task: TaskCreate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     return await TaskRepository(session).add_one(task)
 
 
 @router.patch("/{task_id}", response_model=TaskRead)
 async def edit_one(
-        task_id: uuid.UUID,
-        task: TaskUpdate,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+    task_id: uuid.UUID,
+    task: TaskUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     if is_user_obj_owner(Task, task_id, current_user):
         return await TaskRepository(session).edit_one(task_id, task)
@@ -60,9 +60,9 @@ async def edit_one(
 
 @router.delete("/{task_id}")
 async def delete_one(
-        task_id: uuid.UUID,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+    task_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     if is_user_obj_owner(Task, task_id, current_user):
         return await TaskRepository(session).delete_one(task_id)

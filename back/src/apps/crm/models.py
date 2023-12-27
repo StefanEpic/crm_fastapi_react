@@ -72,8 +72,9 @@ class Employee(Base):
     phone: Mapped[str] = mapped_column(String(12), unique=True)
     photo: Mapped["Photo"] = relationship(back_populates="employee")
     my_tasks: Mapped[Optional[List["Task"]]] = relationship(back_populates="author")
-    tasks: Mapped[Optional[List["Task"]]] = relationship(secondary=task_employee, back_populates="employees",
-                                                         lazy="selectin")
+    tasks: Mapped[Optional[List["Task"]]] = relationship(
+        secondary=task_employee, back_populates="employees", lazy="selectin"
+    )
 
     department_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("department.id"))
     department: Mapped["Department"] = relationship(back_populates="employees")
@@ -102,11 +103,12 @@ class Project(Base):
     __tablename__ = "project"
 
     title: Mapped[str] = mapped_column(String(100), unique=True)
-    description: Mapped[Optional[str]] = mapped_column(Text(1000), nullable=False, default='')
+    description: Mapped[Optional[str]] = mapped_column(Text(1000), nullable=False, default="")
     is_active: Mapped[bool] = mapped_column(default=True)
 
-    tasks: Mapped[Optional[List["Task"]]] = relationship(secondary=task_project, back_populates="projects",
-                                                         lazy="selectin")
+    tasks: Mapped[Optional[List["Task"]]] = relationship(
+        secondary=task_project, back_populates="projects", lazy="selectin"
+    )
 
     def __str__(self):
         return self.title
@@ -116,7 +118,7 @@ class Task(Base):
     __tablename__ = "task"
 
     title: Mapped[str] = mapped_column(String(100))
-    description: Mapped[Optional[str]] = mapped_column(Text(1000), nullable=False, default='')
+    description: Mapped[Optional[str]] = mapped_column(Text(1000), nullable=False, default="")
     status: Mapped[TaskStatus] = mapped_column(default=TaskStatus.todo)
     priority: Mapped[TaskPriority] = mapped_column(default=TaskPriority.none)
     start: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow)

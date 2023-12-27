@@ -19,9 +19,9 @@ router = APIRouter(
 @router.get("", response_model=List[PhotoRead])
 @cache(expire=30)
 async def get_list(
-        pagination: Pagination = Depends(Pagination),
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+    pagination: Pagination = Depends(Pagination),
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     return await PhotoRepository(session).get_list(pagination.skip, pagination.limit)
 
@@ -29,37 +29,37 @@ async def get_list(
 @router.get("/{photo_id}", response_model=PhotoRead)
 @cache(expire=30)
 async def get_one(
-        photo_id: uuid.UUID,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+    photo_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     return await PhotoRepository(session).get_one(photo_id)
 
 
 @router.post("", response_model=PhotoRead)
 async def add_one(
-        photo: PhotoCreate,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_moderator),
+    photo: PhotoCreate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_moderator),
 ):
     return await PhotoRepository(session).add_one(photo)
 
 
 @router.patch("/{photo_id}", response_model=PhotoRead)
 async def edit_one(
-        photo_id: uuid.UUID,
-        photo: PhotoUpdate,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_moderator),
+    photo_id: uuid.UUID,
+    photo: PhotoUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_moderator),
 ):
     return await PhotoRepository(session).edit_one(photo_id, photo)
 
 
 @router.delete("/{photo_id}")
 async def delete_one(
-        photo_id: uuid.UUID,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_moderator),
+    photo_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_moderator),
 ):
     return await PhotoRepository(session).delete_one(photo_id)
 

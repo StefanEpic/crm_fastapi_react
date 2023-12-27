@@ -19,9 +19,9 @@ router = APIRouter(
 @router.get("", response_model=List[EmployeeRead])
 @cache(expire=30)
 async def get_list(
-        pagination: Pagination = Depends(Pagination),
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+    pagination: Pagination = Depends(Pagination),
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     return await EmployeeRepository(session).get_list(pagination.skip, pagination.limit)
 
@@ -29,53 +29,53 @@ async def get_list(
 @router.get("/{employee_id}", response_model=EmployeeReadWithTasks)
 @cache(expire=30)
 async def get_one(
-        employee_id: uuid.UUID,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+    employee_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     return await EmployeeRepository(session).get_one(employee_id)
 
 
 @router.post("", response_model=EmployeeRead)
 async def add_one(
-        employee: EmployeeCreate,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+    employee: EmployeeCreate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     return await EmployeeRepository(session).add_one(employee)
 
 
 @router.patch("/{employee_id}", response_model=EmployeeRead)
 async def edit_one(
-        employee_id: uuid.UUID,
-        employee: EmployeeUpdate,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_moderator),
+    employee_id: uuid.UUID,
+    employee: EmployeeUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_moderator),
 ):
     return await EmployeeRepository(session).edit_one(employee_id, employee)
 
 
 @router.delete("/{employee_id}")
 async def delete_one(
-        employee_id: uuid.UUID,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_moderator),
+    employee_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_moderator),
 ):
     return await EmployeeRepository(session).delete_one(employee_id)
 
 
 @router.patch("/me", response_model=EmployeeRead)
-async def edit_one(
-        employee: EmployeeUpdate,
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+async def edit_me(
+    employee: EmployeeUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     return await EmployeeRepository(session).edit_one(current_user.id, employee)
 
 
 @router.delete("/me")
-async def delete_one(
-        session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(check_permission_user),
+async def delete_me(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
 ):
     return await EmployeeRepository(session).delete_one(current_user.id)

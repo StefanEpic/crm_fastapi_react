@@ -7,7 +7,7 @@ from src.apps.sqladmin.admin_auth import authentication_backend
 from src.apps.sqladmin.routers import admin_routers
 from src.db.db import engine
 
-app = FastAPI(title="Kanban API", summary='API for Kanban task manager', version="1.0")
+app = FastAPI(title="Kanban API", summary="API for Kanban task manager", version="1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:8000"],

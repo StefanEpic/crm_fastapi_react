@@ -1,9 +1,10 @@
 import uuid
 from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from src.apps.auth.models import User
-from src.apps.auth.schemas import UserCreate, UserUpdate
-from src.apps.auth.utils import Hasher
+from src.apps.auth.schemas import UserCreate, UserUpdate, UserLogin, ReturnTokenSchema, RefreshTokenSchema
+from src.apps.auth.utils import Hasher, error_401, pwd_context, create_access_jwt, create_refresh_jwt, decode_jwt
 from src.utils.repository import SQLAlchemyRepository
 
 
@@ -44,3 +45,45 @@ class UserRepository(SQLAlchemyRepository):
             return res
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
+
+
+class AuthRepository(UserRepository):
+    async def get_access_token(self, data: UserLogin) -> ReturnTokenSchema:
+        # check if email exists
+        stmt = select(User).where(User.email == data.email)
+        user = await self.session.execute(stmt)
+        user = user.scalar_one_or_none()
+        if not user:
+            raise error_401
+        # check if password matches
+        matches = pwd_context.verify(data.password, user.password)
+        if not matches:
+            raise error_401
+        # create jwt tokens
+        data = {"email": user.email}
+        access_tkn = await create_access_jwt(data)
+        refresh_tkn = await create_refresh_jwt(data)
+        return ReturnTokenSchema(
+            email=user.email, access_token=access_tkn, refresh_token=refresh_tkn, token_type="bearer"
+        )
+
+    async def get_refresh_token(self, token: RefreshTokenSchema) -> ReturnTokenSchema:
+        data = await decode_jwt(token.refresh_token)
+        # check if "mode": "refresh_token"
+        if "email" not in data and "mode" not in data:
+            raise error_401
+        if data["mode"] != "refresh_token":
+            raise error_401
+        # check if user exists
+        stmt = select(User).where(User.email == data["email"])
+        user = await self.session.execute(stmt)
+        user = user.scalar_one_or_none()
+        if not user:
+            raise error_401
+        # generate new tokens
+        data = {"email": user.email}
+        access_tkn = await create_access_jwt(data)
+        refresh_tkn = await create_refresh_jwt(data)
+        return ReturnTokenSchema(
+            email=user.email, access_token=access_tkn, refresh_token=refresh_tkn, token_type="bearer"
+        )

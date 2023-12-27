@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.apps.auth.models import User
-from src.apps.auth.schemas import UserLogin
-from src.apps.auth.utils import authorize, create_refresh_jwt, create_access_jwt, pwd_context, error_401
+from src.apps.auth.repositories import AuthRepository
+from src.apps.auth.schemas import UserLogin, ReturnTokenSchema, RefreshTokenSchema
 from src.db.db import get_session
 
 router = APIRouter(
@@ -12,31 +10,21 @@ router = APIRouter(
 )
 
 
-@router.post('/login')
-async def login(data: UserLogin, session: AsyncSession = Depends(get_session)):
-    # check if email exists
-    stmt = select(User).where(User.email == data.email)
-    user = await session.execute(stmt)
-    user = user.scalar_one()
-    if not user:
-        raise error_401
-    # check if password matches
-    matches = pwd_context.verify(data.password, user.password)
-    if not matches:
-        raise error_401
-    # create jwt tokens
-    data = {'email': user.email}
-    access_tkn = await create_access_jwt(data)
-    refresh_tkn = await create_refresh_jwt(data)
-
-    return {
-        'email': user.email,
-        'access_token': access_tkn,
-        'refresh_token': refresh_tkn,
-        'type': 'bearer'
-    }
+@router.post(
+    "/access",
+    response_model=ReturnTokenSchema,
+    summary="Get new access and refresh tokens",
+    description="Post email and password for get access and refresh tokens",
+)
+async def get_access_token(user: UserLogin, session: AsyncSession = Depends(get_session)):
+    return await AuthRepository(session).get_access_token(user)
 
 
-@router.post('/refresh_token')
-async def refresh(token_data: dict = Depends(authorize)):
-    return token_data
+@router.post(
+    "/refresh",
+    response_model=ReturnTokenSchema,
+    summary="Update access and refresh tokens",
+    description="Post refresh token for get a new access and refresh tokens",
+)
+async def get_refresh_token(token: RefreshTokenSchema, session: AsyncSession = Depends(get_session)):
+    return await AuthRepository(session).get_refresh_token(token)
