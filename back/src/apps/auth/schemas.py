@@ -16,6 +16,7 @@ class UserRead(BaseModel):
     id: uuid.UUID
     email: EmailStr
     is_active: bool
+    is_verify: bool
     registration_date: datetime.datetime
     permission: UserPermission
 

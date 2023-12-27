@@ -1,6 +1,7 @@
 import datetime
 import uuid
 from typing import Optional, List
+from pydantic_extra_types.phone_numbers import PhoneNumber
 from pydantic import BaseModel
 from src.apps.auth.schemas import UserRead
 from src.apps.crm.models import TaskStatus, TaskPriority
@@ -25,7 +26,7 @@ class EmployeeCreate(BaseModel):
     last_name: str
     first_name: str
     second_name: str
-    phone: str
+    phone: PhoneNumber
     department_id: uuid.UUID
     user_id: uuid.UUID
 
@@ -38,7 +39,7 @@ class EmployeeUpdate(BaseModel):
     last_name: Optional[str] = None
     first_name: Optional[str] = None
     second_name: Optional[str] = None
-    phone: Optional[str] = None
+    phone: Optional[PhoneNumber] = None
     photo: Optional[PhotoCreate] = None
     department_id: Optional[uuid.UUID] = None
     user_id: Optional[uuid.UUID] = None
@@ -118,16 +119,12 @@ class DepartmentReadWithEmployees(DepartmentCreate):
     employees: Optional[List[EmployeeRead]]
 
 
-class EmployeeReadWithTasks(BaseModel):
-    id: uuid.UUID
-    user: UserRead
-    last_name: str
-    first_name: str
-    second_name: str
-    phone: str
-    department: DepartmentRead
-    my_tasks: Optional[List[TaskRead]]
-    tasks: Optional[List[TaskRead]]
+class EmployeeReadWithTasks(EmployeeRead):
+    # user_id: UserRead
+    # photo: PhotoRead
+    department_id: DepartmentRead
+    # my_tasks: Optional[List[TaskRead]]
+    # tasks: Optional[List[TaskRead]]
 
 
 class ProjectReadWithTasks(ProjectRead):

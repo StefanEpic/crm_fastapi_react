@@ -1,3 +1,4 @@
+from pydantic import Extra
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from config import DATABASE_URL
@@ -21,6 +22,7 @@ class GUID(TypeDecorator):
     """
 
     impl = CHAR
+    cache_ok = True
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
@@ -40,13 +42,19 @@ class GUID(TypeDecorator):
                 # hexstring
                 return "%.32x" % value.int
 
-    def process_result_value(self, value, dialect):
+    def _uuid_value(self, value):
         if value is None:
             return value
         else:
             if not isinstance(value, uuid.UUID):
                 value = uuid.UUID(value)
             return value
+
+    def process_result_value(self, value, dialect):
+        return self._uuid_value(value)
+
+    def sort_key_function(self, value):
+        return self._uuid_value(value)
 
 
 class Base(DeclarativeBase):

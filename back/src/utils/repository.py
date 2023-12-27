@@ -2,7 +2,7 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import List, Dict
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -45,7 +45,7 @@ class SQLAlchemyRepository(AbstractRepository):
         """
         res = await self.session.get(self.model, self_id)
         if not res:
-            raise HTTPException(status_code=404, detail="Not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
         return res
 
     async def add_one(self, data: BaseModel) -> BaseModel:
@@ -61,9 +61,9 @@ class SQLAlchemyRepository(AbstractRepository):
             await self.session.refresh(res)
             return res
         except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except IntegrityError as e:
-            raise HTTPException(status_code=400, detail=str(e.orig))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.orig))
 
     async def edit_one(self, self_id: uuid.UUID, data: BaseModel) -> BaseModel:
         """
@@ -75,7 +75,7 @@ class SQLAlchemyRepository(AbstractRepository):
         try:
             res = await self.session.get(self.model, self_id)
             if not res:
-                raise HTTPException(status_code=404, detail="Not found")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
             res_data = data.model_dump(exclude_unset=True)
             for key, value in res_data.items():
                 setattr(res, key, value)
@@ -84,7 +84,7 @@ class SQLAlchemyRepository(AbstractRepository):
             await self.session.refresh(res)
             return res
         except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     async def delete_one(self, self_id: uuid.UUID) -> Dict:
         """
@@ -94,7 +94,21 @@ class SQLAlchemyRepository(AbstractRepository):
         """
         res = await self.session.get(self.model, self_id)
         if not res:
-            raise HTTPException(status_code=404, detail="Not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
         await self.session.delete(res)
+        await self.session.commit()
+        return {"detail": "success"}
+
+    async def deactivate_one(self, self_id: uuid.UUID) -> Dict:
+        """
+        Deactivate one model exemplar
+        :param self_id: uuid model exemplar
+        :return: dictionary
+        """
+        res = await self.session.get(self.model, self_id)
+        if not res:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        res.is_active = False
+        self.session.add(res)
         await self.session.commit()
         return {"detail": "success"}

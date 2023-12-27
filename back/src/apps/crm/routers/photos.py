@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.apps.auth.models import User
 from src.apps.auth.permissions import check_permission_user, check_permission_moderator
 from src.apps.crm.repositories import PhotoRepository
-from src.apps.crm.schemas import PhotoRead, PhotoCreate, PhotoUpdate
-from src.db.db import get_session
+from src.apps.crm.schemas import PhotoRead, PhotoCreate
+from src.db.base_db import get_session
 from src.utils.base_depends import Pagination
 
 router = APIRouter(
@@ -42,17 +42,7 @@ async def add_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_moderator),
 ):
-    return await PhotoRepository(session).add_one(photo)
-
-
-@router.patch("/{photo_id}", response_model=PhotoRead)
-async def edit_one(
-    photo_id: uuid.UUID,
-    photo: PhotoUpdate,
-    session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(check_permission_moderator),
-):
-    return await PhotoRepository(session).edit_one(photo_id, photo)
+    return await PhotoRepository(session).add_one_photo(current_user.id, photo)
 
 
 @router.delete("/{photo_id}")
@@ -61,7 +51,7 @@ async def delete_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_moderator),
 ):
-    return await PhotoRepository(session).delete_one(photo_id)
+    return await PhotoRepository(session).delete_one_photo(photo_id)
 
 
 # @router.post("/my", response_model=PhotoRead)

@@ -5,8 +5,8 @@ from typing import Optional, List
 from sqlalchemy import Column, ForeignKey, Table, String, UniqueConstraint, Text
 from sqlalchemy.orm import Mapped, mapped_column, validates, relationship
 from src.apps.auth.models import User
-from src.db.db import Base
-from src.utils.validators import name_valid, phone_valid
+from src.db.base_db import Base
+from src.utils.validators import name_valid
 
 
 class TaskStatus(enum.Enum):
@@ -84,19 +84,14 @@ class Employee(Base):
 
     __table_args__ = (UniqueConstraint("user_id"),)
 
-    def __str__(self):
-        return self.email
+    def __str__(self) -> str:
+        return str(self.user.email)
 
     @validates("first_name", "second_name", "last_name")
     def validate_name(self, key, *names):
         for name in names:
             if name:
                 return name_valid(name)
-
-    @validates("phone")
-    def validate_phone(self, key, phone):
-        if phone:
-            return phone_valid(phone)
 
 
 class Project(Base):

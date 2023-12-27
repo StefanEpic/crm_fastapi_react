@@ -2,7 +2,7 @@ import uuid
 from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.apps.auth.models import User
-from src.db.db import get_session, Base
+from src.db.base_db import get_session, Base
 
 
 async def is_user_obj_owner(

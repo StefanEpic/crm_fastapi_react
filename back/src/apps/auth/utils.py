@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from config import JWT_ACCESS_TOKEN_EXP_DAYS, JWT_REFRESH_TOKEN_EXP_DAYS, JWT_ALGORITHM, JWT_SECRET_KEY
 from src.apps.auth.models import User
-from src.db.db import get_session
+from src.db.base_db import get_session
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 error_401 = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization credentials")
@@ -52,12 +52,12 @@ class JWTBearer(HTTPBearer):
         credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
         if credentials:
             if not credentials.scheme == "Bearer":
-                raise HTTPException(status_code=403, detail="Invalid authentication scheme")
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid authentication scheme")
             if not await self.verify_jwt(credentials.credentials):
-                raise HTTPException(status_code=403, detail="Invalid token or expired token")
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token or expired token")
             return credentials.credentials
         else:
-            raise HTTPException(status_code=403, detail="Invalid authorization code")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid authorization code")
 
     async def verify_jwt(self, jwtoken: str) -> bool:
         isTokenValid: bool = False

@@ -1,11 +1,13 @@
 from fastapi import FastAPI
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
 from sqladmin import Admin
 from fastapi.middleware.cors import CORSMiddleware
-
+from redis import asyncio as aioredis
 from src.apps.apps_routers import apps_routers
 from src.apps.sqladmin.admin_auth import authentication_backend
 from src.apps.sqladmin.routers import admin_routers
-from src.db.db import engine
+from src.db.base_db import engine
 
 app = FastAPI(title="Kanban API", summary="API for Kanban task manager", version="1.0")
 app.add_middleware(
@@ -30,3 +32,9 @@ for router in admin_routers:
 
 for router in apps_routers:
     app.include_router(router)
+
+
+@app.on_event("startup")
+async def startup():
+    redis = aioredis.from_url("redis://redis")
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")

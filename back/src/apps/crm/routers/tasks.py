@@ -9,7 +9,7 @@ from src.apps.crm.depends import is_user_obj_owner
 from src.apps.crm.models import Task
 from src.apps.crm.repositories import TaskRepository
 from src.apps.crm.schemas import TaskRead, TaskReadWithProjectsAndEmployees, TaskCreate, TaskUpdate
-from src.db.db import get_session
+from src.db.base_db import get_session
 from src.utils.base_depends import Pagination
 
 router = APIRouter(
@@ -65,4 +65,4 @@ async def delete_one(
     current_user: User = Depends(check_permission_user),
 ):
     if is_user_obj_owner(Task, task_id, current_user):
-        return await TaskRepository(session).delete_one(task_id)
+        return await TaskRepository(session).deactivate_one(task_id)
