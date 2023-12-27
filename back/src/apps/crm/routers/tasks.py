@@ -9,7 +9,7 @@ from src.apps.crm.depends import is_user_obj_owner
 from src.apps.crm.models import Task
 from src.apps.crm.repositories import TaskRepository
 from src.apps.crm.schemas import TaskRead, TaskReadWithProjectsAndEmployees, TaskCreate, TaskUpdate
-from src.db.db import get_session
+from src.db.base_db import get_session
 from src.utils.base_depends import Pagination
 
 router = APIRouter(
@@ -25,7 +25,7 @@ async def get_list(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await TaskRepository(session).get_list(pagination.skip, pagination.limit)
+    return await TaskRepository(session).get_list_without_inactive(pagination.skip, pagination.limit)
 
 
 @router.get("/{task_id}", response_model=TaskReadWithProjectsAndEmployees)
@@ -35,7 +35,7 @@ async def get_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await TaskRepository(session).get_one(task_id)
+    return await TaskRepository(session).get_one_without_inactive(task_id)
 
 
 @router.post("", response_model=TaskRead)
@@ -54,7 +54,7 @@ async def edit_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    if is_user_obj_owner(Task, task_id, current_user):
+    if is_user_obj_owner(Task, task_id, current_user.id):
         return await TaskRepository(session).edit_one(task_id, task)
 
 
@@ -64,5 +64,5 @@ async def delete_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    if is_user_obj_owner(Task, task_id, current_user):
-        return await TaskRepository(session).delete_one(task_id)
+    if is_user_obj_owner(Task, task_id, current_user.id):
+        return await TaskRepository(session).deactivate_one(task_id)

@@ -7,7 +7,7 @@ from src.apps.auth.models import User
 from src.apps.auth.permissions import check_permission_user, check_permission_moderator
 from src.apps.crm.repositories import ProjectRepository
 from src.apps.crm.schemas import ProjectRead, ProjectReadWithTasks, ProjectCreate, ProjectUpdate
-from src.db.db import get_session
+from src.db.base_db import get_session
 from src.utils.base_depends import Pagination
 
 router = APIRouter(
@@ -23,7 +23,7 @@ async def get_list(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await ProjectRepository(session).get_list(pagination.skip, pagination.limit)
+    return await ProjectRepository(session).get_list_without_inactive(pagination.skip, pagination.limit)
 
 
 @router.get("/{project_id}", response_model=ProjectReadWithTasks)
@@ -33,7 +33,7 @@ async def get_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await ProjectRepository(session).get_one(project_id)
+    return await ProjectRepository(session).get_one_without_inactive(project_id)
 
 
 @router.post("", response_model=ProjectRead)
@@ -61,4 +61,4 @@ async def delete_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_moderator),
 ):
-    return await ProjectRepository(session).delete_one(project_id)
+    return await ProjectRepository(session).deactivate_one(project_id)

@@ -5,8 +5,8 @@ from typing import Optional, List
 from sqlalchemy import Column, ForeignKey, Table, String, UniqueConstraint, Text
 from sqlalchemy.orm import Mapped, mapped_column, validates, relationship
 from src.apps.auth.models import User
-from src.db.db import Base
-from src.utils.validators import name_valid, phone_valid
+from src.db.base_db import Base
+from src.utils.validators import name_valid
 
 
 class TaskStatus(enum.Enum):
@@ -42,7 +42,7 @@ class Department(Base):
     __tablename__ = "department"
 
     title: Mapped[str] = mapped_column(String(100), unique=True)
-    employees: Mapped[Optional[List["Employee"]]] = relationship(back_populates="department")
+    employees: Mapped[Optional[List["Employee"]]] = relationship(back_populates="department", lazy="selectin")
 
     def __str__(self):
         return self.title
@@ -70,33 +70,28 @@ class Employee(Base):
     first_name: Mapped[str] = mapped_column(String(100))
     second_name: Mapped[str] = mapped_column(String(100))
     phone: Mapped[str] = mapped_column(String(12), unique=True)
-    photo: Mapped["Photo"] = relationship(back_populates="employee")
-    my_tasks: Mapped[Optional[List["Task"]]] = relationship(back_populates="author")
+    photo: Mapped["Photo"] = relationship(back_populates="employee", lazy="selectin")
+    my_tasks: Mapped[Optional[List["Task"]]] = relationship(back_populates="author", lazy="selectin")
     tasks: Mapped[Optional[List["Task"]]] = relationship(
         secondary=task_employee, back_populates="employees", lazy="selectin"
     )
 
     department_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("department.id"))
-    department: Mapped["Department"] = relationship(back_populates="employees")
+    department: Mapped["Department"] = relationship(back_populates="employees", lazy="selectin")
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
     user: Mapped["User"] = relationship(single_parent=True, lazy="selectin")
 
     __table_args__ = (UniqueConstraint("user_id"),)
 
-    def __str__(self):
-        return self.email
+    def __str__(self) -> str:
+        return str(self.user.email)
 
     @validates("first_name", "second_name", "last_name")
     def validate_name(self, key, *names):
         for name in names:
             if name:
                 return name_valid(name)
-
-    @validates("phone")
-    def validate_phone(self, key, phone):
-        if phone:
-            return phone_valid(phone)
 
 
 class Project(Base):
@@ -126,7 +121,7 @@ class Task(Base):
     is_active: Mapped[bool] = mapped_column(default=True)
 
     author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employee.id"))
-    author: Mapped["Employee"] = relationship(back_populates="tasks")
+    author: Mapped["Employee"] = relationship(back_populates="my_tasks", lazy="selectin")
 
     projects: Mapped[List["Project"]] = relationship(secondary=task_project, back_populates="tasks", lazy="selectin")
 

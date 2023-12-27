@@ -7,7 +7,7 @@ from src.apps.auth.models import User
 from src.apps.auth.permissions import check_permission_user, check_permission_moderator
 from src.apps.auth.repositories import UserRepository
 from src.apps.auth.schemas import UserRead, UserCreate, UserUpdate
-from src.db.db import get_session
+from src.db.base_db import get_session
 from src.utils.base_depends import Pagination
 
 router = APIRouter(
@@ -23,7 +23,7 @@ async def get_list(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await UserRepository(session).get_list(pagination.skip, pagination.limit)
+    return await UserRepository(session).get_list_users(pagination.skip, pagination.limit)
 
 
 @router.get("/{user_id}", response_model=UserRead, summary="Get user", description="Get user by id")
@@ -32,7 +32,7 @@ async def get_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_moderator),
 ):
-    return await UserRepository(session).get_one(user_id)
+    return await UserRepository(session).get_one_user(user_id)
 
 
 @router.post("", response_model=UserRead, summary="Add user", description="Add new user")
@@ -62,15 +62,16 @@ async def delete_one(
     return await UserRepository(session).delete_one(user_id)
 
 
-@router.get("/me", response_model=UserRead, summary="Get me", description="Get my params")
+@router.get("/me/", response_model=UserRead, summary="Get me", description="Get my params")
 async def get_me(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
+    print(UserRead)
     return await UserRepository(session).get_one(current_user.id)
 
 
-@router.patch("/me", response_model=UserRead, summary="Change me", description="Change my params")
+@router.patch("/me/", response_model=UserRead, summary="Change me", description="Change my params")
 async def edit_me(
     user: UserUpdate,
     session: AsyncSession = Depends(get_session),
@@ -79,9 +80,9 @@ async def edit_me(
     return await UserRepository(session).edit_one_user(current_user.id, user)
 
 
-@router.delete("/me", summary="Delete me", description="Delete my params")
+@router.delete("/me/", summary="Delete me", description="Delete my params")
 async def delete_me(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await UserRepository(session).delete_one(current_user.id)
+    return await UserRepository(session).deactivate_one(current_user.id)

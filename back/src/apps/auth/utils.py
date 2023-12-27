@@ -8,10 +8,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from config import JWT_ACCESS_TOKEN_EXP_DAYS, JWT_REFRESH_TOKEN_EXP_DAYS, JWT_ALGORITHM, JWT_SECRET_KEY
 from src.apps.auth.models import User
-from src.db.db import get_session
+from src.db.base_db import get_session
+from src.utils.base_errors import ERROR_401
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-error_401 = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization credentials")
 
 
 class Hasher:
@@ -22,6 +22,33 @@ class Hasher:
     @staticmethod
     def get_password_hash(password: str):
         return pwd_context.hash(password)
+
+
+class JWTBearer(HTTPBearer):
+    def __init__(self, auto_error: bool = True):
+        super(JWTBearer, self).__init__(auto_error=auto_error)
+
+    async def __call__(self, request: Request):
+        credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
+        if credentials:
+            if not credentials.scheme == "Bearer":
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid authentication scheme")
+            if not await self.verify_jwt(credentials.credentials):
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token or expired token")
+            return credentials.credentials
+        else:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid authorization code")
+
+    async def verify_jwt(self, jwtoken: str) -> bool:
+        isTokenValid: bool = False
+
+        try:
+            payload = await decode_jwt(jwtoken)
+        except JWTError:
+            payload = None
+        if payload:
+            isTokenValid = True
+        return isTokenValid
 
 
 async def create_access_jwt(data: dict):
@@ -44,33 +71,6 @@ async def decode_jwt(token: str) -> dict:
         return {}
 
 
-class JWTBearer(HTTPBearer):
-    def __init__(self, auto_error: bool = True):
-        super(JWTBearer, self).__init__(auto_error=auto_error)
-
-    async def __call__(self, request: Request):
-        credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
-        if credentials:
-            if not credentials.scheme == "Bearer":
-                raise HTTPException(status_code=403, detail="Invalid authentication scheme")
-            if not await self.verify_jwt(credentials.credentials):
-                raise HTTPException(status_code=403, detail="Invalid token or expired token")
-            return credentials.credentials
-        else:
-            raise HTTPException(status_code=403, detail="Invalid authorization code")
-
-    async def verify_jwt(self, jwtoken: str) -> bool:
-        isTokenValid: bool = False
-
-        try:
-            payload = await decode_jwt(jwtoken)
-        except JWTError:
-            payload = None
-        if payload:
-            isTokenValid = True
-        return isTokenValid
-
-
 async def verified_user(
     token: str = Depends(JWTBearer()), session: AsyncSession = Depends(get_session)
 ) -> Union[User, HTTPException]:
@@ -84,16 +84,17 @@ async def verified_user(
         data = await decode_jwt(token)
         # check if "mode": "refresh_token"
         if "email" not in data and "mode" not in data:
-            raise error_401
+            raise ERROR_401
         if data["mode"] != "access_token":
-            raise error_401
+            raise ERROR_401
         # check if user exists
         stmt = select(User).where(User.email == data["email"])
         user = await session.execute(stmt)
         user = user.scalar_one()
+
         if not user:
-            raise error_401
+            raise ERROR_401
 
         return user
     except JWTError:
-        raise error_401
+        raise ERROR_401

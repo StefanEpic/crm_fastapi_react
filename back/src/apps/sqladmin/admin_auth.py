@@ -1,5 +1,6 @@
 from typing import Union
-from jose import jwt
+from fastapi import HTTPException, status
+from jose import jwt, ExpiredSignatureError
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -25,7 +26,12 @@ class AdminAuth(AuthenticationBackend):
         if "token" not in request.session:
             return RedirectResponse(request.url_for("admin:login"), status_code=302)
         token = request.session["token"]
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        except ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not valid token. Need /logout and login again"
+            )
         if payload["user"] == SQLADMIN_USER and payload["pass"] == SQLADMIN_PASSWORD:
             return True
 

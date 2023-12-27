@@ -1,12 +1,13 @@
 import uuid
 from abc import ABC, abstractmethod
 from typing import List, Dict
-
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.utils.base_errors import ERROR_404
 
 
 class AbstractRepository(ABC):
@@ -15,7 +16,7 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
 
-class SQLAlchemyRepository(AbstractRepository):
+class BaseSQLAlchemyRepository(AbstractRepository):
     """
     Base CRUD class
     """
@@ -45,7 +46,7 @@ class SQLAlchemyRepository(AbstractRepository):
         """
         res = await self.session.get(self.model, self_id)
         if not res:
-            raise HTTPException(status_code=404, detail="Not found")
+            raise ERROR_404
         return res
 
     async def add_one(self, data: BaseModel) -> BaseModel:
@@ -61,9 +62,9 @@ class SQLAlchemyRepository(AbstractRepository):
             await self.session.refresh(res)
             return res
         except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except IntegrityError as e:
-            raise HTTPException(status_code=400, detail=str(e.orig))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.orig))
 
     async def edit_one(self, self_id: uuid.UUID, data: BaseModel) -> BaseModel:
         """
@@ -75,7 +76,7 @@ class SQLAlchemyRepository(AbstractRepository):
         try:
             res = await self.session.get(self.model, self_id)
             if not res:
-                raise HTTPException(status_code=404, detail="Not found")
+                raise ERROR_404
             res_data = data.model_dump(exclude_unset=True)
             for key, value in res_data.items():
                 setattr(res, key, value)
@@ -84,7 +85,7 @@ class SQLAlchemyRepository(AbstractRepository):
             await self.session.refresh(res)
             return res
         except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     async def delete_one(self, self_id: uuid.UUID) -> Dict:
         """
@@ -94,7 +95,59 @@ class SQLAlchemyRepository(AbstractRepository):
         """
         res = await self.session.get(self.model, self_id)
         if not res:
-            raise HTTPException(status_code=404, detail="Not found")
+            raise ERROR_404
         await self.session.delete(res)
+        await self.session.commit()
+        return {"detail": "success"}
+
+
+class SQLAlchemyRepository(BaseSQLAlchemyRepository):
+    async def get_list_without_inactive(self, offset: int, limit: int) -> List[BaseModel]:
+        """
+        Get list of the model exemplars without inactive
+        :param offset: offset value
+        :param limit: limit value
+        :return: list model exemplars
+        """
+        stmt = select(self.model).where(self.model.is_active.is_(True)).offset(offset).limit(limit)
+        res = await self.session.execute(stmt)
+        res = [row[0] for row in res.all()]
+        return res
+
+    async def get_one_without_inactive(self, self_id: uuid.UUID) -> BaseModel:
+        """
+        Get one model exemplar without inactive
+        :param self_id: uuid of the exemplar
+        :return: model exemplar
+        """
+        res = await self.session.get(self.model, self_id)
+        if not res or res.is_active.is_(False):
+            raise ERROR_404
+        return res
+
+    async def put_one(self, self_id: uuid.UUID, data: BaseModel) -> BaseModel:
+        """
+        Put one model exemplar
+        :param self_id: uuid model exemplar
+        :param data: new data
+        :return: exemplar data
+        """
+        res = await self.session.get(self.model, self_id)
+        if not res:
+            return await super().add_one(data)
+        else:
+            return await super().edit_one(self_id, data)
+
+    async def deactivate_one(self, self_id: uuid.UUID) -> Dict:
+        """
+        Deactivate one model exemplar
+        :param self_id: uuid model exemplar
+        :return: dictionary
+        """
+        res = await self.session.get(self.model, self_id)
+        if not res:
+            raise ERROR_404
+        res.is_active = False
+        self.session.add(res)
         await self.session.commit()
         return {"detail": "success"}

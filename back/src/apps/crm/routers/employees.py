@@ -7,7 +7,7 @@ from src.apps.auth.models import User
 from src.apps.auth.permissions import check_permission_user, check_permission_moderator
 from src.apps.crm.repositories import EmployeeRepository
 from src.apps.crm.schemas import EmployeeRead, EmployeeReadWithTasks, EmployeeCreate, EmployeeUpdate
-from src.db.db import get_session
+from src.db.base_db import get_session
 from src.utils.base_depends import Pagination
 
 router = APIRouter(
@@ -23,7 +23,7 @@ async def get_list(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await EmployeeRepository(session).get_list(pagination.skip, pagination.limit)
+    return await EmployeeRepository(session).get_list_employees(pagination.skip, pagination.limit)
 
 
 @router.get("/{employee_id}", response_model=EmployeeReadWithTasks)
@@ -33,14 +33,14 @@ async def get_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await EmployeeRepository(session).get_one(employee_id)
+    return await EmployeeRepository(session).get_one_employee(employee_id)
 
 
 @router.post("", response_model=EmployeeRead)
 async def add_one(
     employee: EmployeeCreate,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(check_permission_user),
+    current_user: User = Depends(check_permission_moderator),
 ):
     return await EmployeeRepository(session).add_one(employee)
 
@@ -61,21 +61,21 @@ async def delete_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_moderator),
 ):
-    return await EmployeeRepository(session).delete_one(employee_id)
+    return await EmployeeRepository(session).deactivate_one_employee(employee_id)
 
 
-@router.patch("/me", response_model=EmployeeRead)
-async def edit_me(
+@router.put("/me/", response_model=EmployeeRead)
+async def put_me(
     employee: EmployeeUpdate,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await EmployeeRepository(session).edit_one(current_user.id, employee)
+    return await EmployeeRepository(session).put_one(current_user.id, employee)
 
 
-@router.delete("/me")
+@router.delete("/me/")
 async def delete_me(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await EmployeeRepository(session).delete_one(current_user.id)
+    return await EmployeeRepository(session).deactivate_one_employee(current_user.id)

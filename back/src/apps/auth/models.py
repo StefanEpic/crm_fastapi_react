@@ -1,9 +1,8 @@
 import datetime
 import enum
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column, validates
-from src.db.db import Base
-from src.utils.validators import email_valid
+from sqlalchemy.orm import Mapped, mapped_column
+from src.db.base_db import Base
 
 
 class UserPermission(enum.Enum):
@@ -19,12 +18,9 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     password: Mapped[str]
     is_active: Mapped[bool] = mapped_column(default=True)
+    is_verify: Mapped[bool] = mapped_column(default=False)
     registration_date: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow)
     permission: Mapped[UserPermission] = mapped_column(default=UserPermission.none)
 
     def __str__(self):
         return self.email
-
-    @validates("email")
-    def validate_email(self, key, email):
-        return email_valid(email)

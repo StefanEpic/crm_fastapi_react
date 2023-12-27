@@ -1,9 +1,15 @@
 import datetime
 import uuid
 from typing import Optional, List
+from pydantic_extra_types.phone_numbers import PhoneNumber
 from pydantic import BaseModel
 from src.apps.auth.schemas import UserRead
 from src.apps.crm.models import TaskStatus, TaskPriority
+
+PhoneNumber.default_region_code = "RU"
+PhoneNumber.phone_format = "E123"
+PhoneNumber.min_length = 7
+PhoneNumber.max_length = 11
 
 
 class PhotoCreate(BaseModel):
@@ -25,7 +31,7 @@ class EmployeeCreate(BaseModel):
     last_name: str
     first_name: str
     second_name: str
-    phone: str
+    phone: PhoneNumber
     department_id: uuid.UUID
     user_id: uuid.UUID
 
@@ -38,7 +44,7 @@ class EmployeeUpdate(BaseModel):
     last_name: Optional[str] = None
     first_name: Optional[str] = None
     second_name: Optional[str] = None
-    phone: Optional[str] = None
+    phone: Optional[PhoneNumber] = None
     photo: Optional[PhotoCreate] = None
     department_id: Optional[uuid.UUID] = None
     user_id: Optional[uuid.UUID] = None
@@ -105,12 +111,12 @@ class TaskReadWithProjectsAndEmployees(BaseModel):
     description: Optional[str] = None
     status: TaskStatus
     priority: TaskPriority
-    start: datetime.datetime
-    end: datetime.datetime
+    start: Optional[datetime.datetime]
+    end: Optional[datetime.datetime]
     is_active: bool
     author: EmployeeRead
-    projects: List[EmployeeRead]
-    employees: List[EmployeeRead]
+    projects: Optional[List[EmployeeRead]]
+    employees: Optional[List[EmployeeRead]]
 
 
 class DepartmentReadWithEmployees(DepartmentCreate):
@@ -120,12 +126,13 @@ class DepartmentReadWithEmployees(DepartmentCreate):
 
 class EmployeeReadWithTasks(BaseModel):
     id: uuid.UUID
-    user: UserRead
     last_name: str
     first_name: str
     second_name: str
-    phone: str
-    department: DepartmentRead
+    phone: PhoneNumber
+    user: UserRead
+    photo: Optional[PhotoRead]
+    department: Optional[DepartmentRead]
     my_tasks: Optional[List[TaskRead]]
     tasks: Optional[List[TaskRead]]
 

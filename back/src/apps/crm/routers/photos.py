@@ -1,13 +1,13 @@
 import uuid
 from typing import List
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File
 from fastapi_cache.decorator import cache
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.apps.auth.models import User
 from src.apps.auth.permissions import check_permission_user, check_permission_moderator
 from src.apps.crm.repositories import PhotoRepository
-from src.apps.crm.schemas import PhotoRead, PhotoCreate, PhotoUpdate
-from src.db.db import get_session
+from src.apps.crm.schemas import PhotoRead
+from src.db.base_db import get_session
 from src.utils.base_depends import Pagination
 
 router = APIRouter(
@@ -36,23 +36,14 @@ async def get_one(
     return await PhotoRepository(session).get_one(photo_id)
 
 
-@router.post("", response_model=PhotoRead)
-async def add_one(
-    photo: PhotoCreate,
+@router.put("", response_model=PhotoRead)
+async def put_one(
+    employee_id: uuid.UUID,
+    photo: UploadFile = File(...),
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_moderator),
 ):
-    return await PhotoRepository(session).add_one(photo)
-
-
-@router.patch("/{photo_id}", response_model=PhotoRead)
-async def edit_one(
-    photo_id: uuid.UUID,
-    photo: PhotoUpdate,
-    session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(check_permission_moderator),
-):
-    return await PhotoRepository(session).edit_one(photo_id, photo)
+    return await PhotoRepository(session).put_one_photo(employee_id, photo)
 
 
 @router.delete("/{photo_id}")
@@ -61,32 +52,21 @@ async def delete_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_moderator),
 ):
-    return await PhotoRepository(session).delete_one(photo_id)
+    return await PhotoRepository(session).delete_one_photo(photo_id)
 
 
-# @router.post("/my", response_model=PhotoRead)
-# async def add_one(
-#         photo: PhotoCreate,
-#         session: AsyncSession = Depends(get_session),
-#         current_user: User = Depends(check_permission_user),
-# ):
-#     return await PhotoRepository(session).add_one(photo)
-#
-#
-# @router.patch("/my", response_model=PhotoRead)
-# async def edit_one(
-#         photo: PhotoUpdate,
-#         session: AsyncSession = Depends(get_session),
-#         current_user: User = Depends(check_permission_moderator),
-# ):
-#     photo_id =
-#     return await PhotoRepository(session).edit_one(photo_id, photo)
-#
-#
-# @router.delete("/my")
-# async def delete_one(
-#         photo_id: uuid.UUID,
-#         session: AsyncSession = Depends(get_session),
-#         current_user: User = Depends(check_permission_moderator),
-# ):
-#     return await PhotoRepository(session).delete_one(photo_id)
+@router.put("/my/", response_model=PhotoRead)
+async def put_one_my(
+    photo: UploadFile = File(...),
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
+):
+    return await PhotoRepository(session).put_one_photo(current_user.id, photo)
+
+
+@router.delete("/my/")
+async def delete_one_my(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_moderator),
+):
+    return await PhotoRepository(session).delete_one_photo(current_user.id)
