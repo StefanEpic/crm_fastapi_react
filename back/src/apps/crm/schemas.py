@@ -61,7 +61,7 @@ class DepartmentUpdate(BaseModel):
 
 class ProjectCreate(BaseModel):
     title: str
-    description: Optional[str]
+    description: Optional[str] = None
 
 
 class ProjectRead(ProjectCreate):
@@ -92,14 +92,14 @@ class TaskRead(TaskCreate):
 
 
 class TaskUpdate(BaseModel):
-    title: Optional[str]
-    description: Optional[str]
-    status: Optional[TaskStatus]
-    priority: Optional[TaskPriority]
-    start: Optional[datetime.datetime]
-    end: Optional[datetime.datetime]
-    projects: Optional[List[uuid.UUID]]
-    employees: Optional[List[uuid.UUID]]
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[TaskStatus] = None
+    priority: Optional[TaskPriority] = None
+    start: Optional[datetime.datetime] = None
+    end: Optional[datetime.datetime] = None
+    projects: Optional[List[uuid.UUID]] = None
+    employees: Optional[List[uuid.UUID]] = None
 
 
 class TaskReadWithProjectsAndEmployees(BaseModel):
@@ -108,17 +108,17 @@ class TaskReadWithProjectsAndEmployees(BaseModel):
     description: Optional[str] = None
     status: TaskStatus
     priority: TaskPriority
-    start: Optional[datetime.datetime]
-    end: Optional[datetime.datetime]
+    start: Optional[datetime.datetime] = None
+    end: Optional[datetime.datetime] = None
     is_active: bool
     author: EmployeeRead
-    projects: Optional[List[EmployeeRead]]
-    employees: Optional[List[EmployeeRead]]
+    projects: Optional[List[EmployeeRead]] = None
+    employees: Optional[List[EmployeeRead]] = None
 
 
 class DepartmentReadWithEmployees(DepartmentCreate):
     id: uuid.UUID
-    employees: Optional[List[EmployeeRead]]
+    employees: Optional[List[EmployeeRead]] = None
 
 
 class EmployeeReadWithTasks(BaseModel):
@@ -128,10 +128,10 @@ class EmployeeReadWithTasks(BaseModel):
     second_name: str
     phone: str
     user: UserRead
-    photo: Optional[PhotoRead]
-    department: Optional[DepartmentRead]
-    my_tasks: Optional[List[TaskRead]]
-    tasks: Optional[List[TaskRead]]
+    photo: Optional[PhotoRead] = None
+    department: Optional[DepartmentRead] = None
+    my_tasks: Optional[List[TaskRead]] = None
+    tasks: Optional[List[TaskRead]] = None
 
 
 class ProjectReadWithTasks(ProjectRead):

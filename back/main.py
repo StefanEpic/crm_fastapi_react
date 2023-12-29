@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
@@ -29,12 +31,11 @@ admin = Admin(app, engine, title="Kanban Admin Panel", authentication_backend=au
 for router in admin_routers:
     admin.add_view(router)
 
-
 for router in apps_routers:
     app.include_router(router)
 
 
-@app.on_event("startup")
-async def startup() -> None:
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> None:
     redis = aioredis.from_url("redis://redis")
     FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")

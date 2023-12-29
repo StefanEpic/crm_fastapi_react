@@ -56,8 +56,8 @@ class BaseRepository(AbstractRepository):
         :return: exemplar data
         """
         try:
+            data = data.model_dump()
             if user_id:
-                data = data.model_dump()
                 data["user_id"] = user_id
             res = self.model(**data)
             self.session.add(res)
