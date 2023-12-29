@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.apps.auth.models import User
 from src.apps.auth.permissions import check_permission_user, check_permission_moderator
 from src.apps.crm.repositories import EmployeeRepository
-from src.apps.crm.schemas import EmployeeRead, EmployeeReadWithTasks, EmployeeCreate, EmployeeUpdate
+from src.apps.crm.schemas import EmployeeRead, EmployeeReadWithTasks, EmployeeCreate, EmployeeUpdate, MyEmployeeCreate
 from src.db.base_db import get_session
-from src.utils.base_depends import Pagination
+from src.base_utils.base_depends import Pagination
 
 router = APIRouter(
     prefix="/employees",
@@ -64,13 +64,22 @@ async def delete_one(
     return await EmployeeRepository(session).deactivate_one_employee(employee_id)
 
 
-@router.put("/me/", response_model=EmployeeRead)
-async def put_me(
-    employee: EmployeeUpdate,
+@router.post("/me/", response_model=EmployeeRead)
+async def add_one_me(
+    employee: MyEmployeeCreate,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await EmployeeRepository(session).put_one(current_user.id, employee)
+    return await EmployeeRepository(session).add_one(employee, current_user.id)
+
+
+@router.patch("/me/", response_model=EmployeeRead)
+async def edit_one_me(
+    employee: MyEmployeeCreate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
+):
+    return await EmployeeRepository(session).edit_one(current_user.id, employee)
 
 
 @router.delete("/me/")

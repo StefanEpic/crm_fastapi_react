@@ -26,7 +26,7 @@ async def get_access_token(user: UserCreate, session: AsyncSession = Depends(get
     summary="Update access and refresh tokens",
     description="Post refresh token for get a new access and refresh tokens",
 )
-async def get_refresh_token(token: RefreshTokenSchema,
-                            session: AsyncSession = Depends(get_session)
-                            ) -> ReturnTokenSchema:
+async def get_refresh_token(
+    token: RefreshTokenSchema, session: AsyncSession = Depends(get_session)
+) -> ReturnTokenSchema:
     return await AuthRepository(session).get_refresh_token(token)

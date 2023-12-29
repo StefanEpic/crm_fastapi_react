@@ -8,7 +8,7 @@ from src.apps.auth.permissions import check_permission_user, check_permission_mo
 from src.apps.crm.repositories import DepartmentRepository
 from src.apps.crm.schemas import DepartmentRead, DepartmentCreate, DepartmentUpdate, DepartmentReadWithEmployees
 from src.db.base_db import get_session
-from src.utils.base_depends import Pagination
+from src.base_utils.base_depends import Pagination
 
 router = APIRouter(
     prefix="/departments",

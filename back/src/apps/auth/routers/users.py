@@ -8,7 +8,7 @@ from src.apps.auth.permissions import check_permission_user, check_permission_mo
 from src.apps.auth.repositories import UserRepository
 from src.apps.auth.schemas import UserRead, UserCreate, UserUpdate
 from src.db.base_db import get_session
-from src.utils.base_depends import Pagination
+from src.base_utils.base_depends import Pagination
 
 router = APIRouter(
     prefix="/users",

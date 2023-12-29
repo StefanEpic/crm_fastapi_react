@@ -11,8 +11,6 @@ fastapi = {extras = ["all"], version = "^0.108.0"}
 fastapi-cache2 = {extras = ["redis"], version = "^0.2.1"}
 sqlalchemy = "^2.0.23"
 pydantic = {extras = ["email"], version = "^2.5.3"}
-phonenumbers = "^8.13.27"
-pydantic-extra-types = "^2.2.0"
 python-dotenv = "^1.0.0"
 alembic = "^1.13.1"
 asyncpg = "^0.29.0"

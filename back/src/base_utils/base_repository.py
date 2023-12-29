@@ -6,8 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.utils.base_errors import ERROR_404
+from src.base_utils.base_errors import ERROR_404
 
 
 class AbstractRepository(ABC):
@@ -16,9 +15,9 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
 
-class BaseSQLAlchemyRepository(AbstractRepository):
+class BaseRepository(AbstractRepository):
     """
-    Base CRUD class
+    Base CRUD repository
     """
 
     model = None
@@ -49,14 +48,18 @@ class BaseSQLAlchemyRepository(AbstractRepository):
             raise ERROR_404
         return res
 
-    async def add_one(self, data: BaseModel) -> BaseModel:
+    async def add_one(self, data: BaseModel, user_id: uuid.UUID = None) -> BaseModel:
         """
         Add one model exemplar
         :param data: exemplar data
+        :param user_id: optional param if need create model exemplar for current user
         :return: exemplar data
         """
         try:
-            res = self.model(**data.model_dump())
+            if user_id:
+                data = data.model_dump()
+                data["user_id"] = user_id
+            res = self.model(**data)
             self.session.add(res)
             await self.session.commit()
             await self.session.refresh(res)
@@ -101,7 +104,11 @@ class BaseSQLAlchemyRepository(AbstractRepository):
         return {"detail": "success"}
 
 
-class SQLAlchemyRepository(BaseSQLAlchemyRepository):
+class BaseRepositoryWithoutInactive(BaseRepository):
+    """
+    Repository for work with models with is_active field
+    """
+
     async def get_list_without_inactive(self, offset: int, limit: int) -> List[BaseModel]:
         """
         Get list of the model exemplars without inactive
@@ -125,19 +132,6 @@ class SQLAlchemyRepository(BaseSQLAlchemyRepository):
             raise ERROR_404
         return res
 
-    async def put_one(self, self_id: uuid.UUID, data: BaseModel) -> BaseModel:
-        """
-        Put one model exemplar
-        :param self_id: uuid model exemplar
-        :param data: new data
-        :return: exemplar data
-        """
-        res = await self.session.get(self.model, self_id)
-        if not res:
-            return await super().add_one(data)
-        else:
-            return await super().edit_one(self_id, data)
-
     async def deactivate_one(self, self_id: uuid.UUID) -> Dict:
         """
         Deactivate one model exemplar
@@ -151,3 +145,22 @@ class SQLAlchemyRepository(BaseSQLAlchemyRepository):
         self.session.add(res)
         await self.session.commit()
         return {"detail": "success"}
+
+
+class SQLAlchemyRepository(BaseRepositoryWithoutInactive):
+    """
+    Base CRUD repository with PUT method
+    """
+
+    async def put_one(self, self_id: uuid.UUID, data: BaseModel) -> BaseModel:
+        """
+        Put one model exemplar
+        :param self_id: uuid model exemplar
+        :param data: new data
+        :return: exemplar data
+        """
+        res = await self.session.get(self.model, self_id)
+        if not res:
+            return await super().add_one(data)
+        else:
+            return await super().edit_one(self_id, data)

@@ -6,7 +6,7 @@ from sqlalchemy import Column, ForeignKey, Table, String, UniqueConstraint, Text
 from sqlalchemy.orm import Mapped, mapped_column, validates, relationship
 from src.apps.auth.models import User
 from src.db.base_db import Base
-from src.utils.validators import name_valid
+from src.base_utils.base_validators import name_valid, phone_valid
 
 
 class TaskStatus(enum.Enum):
@@ -41,7 +41,7 @@ task_employee = Table(
 class Department(Base):
     __tablename__ = "department"
 
-    title: Mapped[str] = mapped_column(String(100), unique=True)
+    title: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     employees: Mapped[Optional[List["Employee"]]] = relationship(back_populates="department", lazy="selectin")
 
     def __str__(self):
@@ -54,7 +54,7 @@ class Photo(Base):
     url: Mapped[str]
     path: Mapped[str]
 
-    employee_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employee.id"))
+    employee_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employee.id"), index=True)
     employee: Mapped["Employee"] = relationship(back_populates="photo", single_parent=True, lazy="selectin")
 
     __table_args__ = (UniqueConstraint("employee_id"),)
@@ -93,11 +93,16 @@ class Employee(Base):
             if name:
                 return name_valid(name)
 
+    @validates("phone")
+    def validate_phone(self, key, phone):
+        if phone:
+            return phone_valid(phone)
+
 
 class Project(Base):
     __tablename__ = "project"
 
-    title: Mapped[str] = mapped_column(String(100), unique=True)
+    title: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text(1000), nullable=False, default="")
     is_active: Mapped[bool] = mapped_column(default=True)
 

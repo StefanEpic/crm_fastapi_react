@@ -7,8 +7,8 @@ from sqlalchemy.exc import IntegrityError
 from src.apps.auth.models import User
 from src.apps.auth.schemas import UserCreate, UserUpdate, ReturnTokenSchema, RefreshTokenSchema, UserRead
 from src.apps.auth.utils import Hasher, pwd_context, create_access_jwt, create_refresh_jwt, decode_jwt
-from src.utils.base_errors import ERROR_401, ERROR_404
-from src.utils.repository import SQLAlchemyRepository
+from src.base_utils.base_errors import ERROR_401, ERROR_404
+from src.base_utils.base_repository import SQLAlchemyRepository
 
 
 class UserRepository(SQLAlchemyRepository):

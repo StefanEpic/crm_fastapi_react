@@ -9,12 +9,20 @@ from config import MEDIA_URL, BASE_SITE_URL
 from src.apps.auth.models import User
 from src.apps.crm.models import Department, Photo, Employee, Project, Task
 from src.apps.crm.schemas import EmployeeRead, EmployeeReadWithTasks
-from src.utils.base_errors import ERROR_404
-from src.utils.repository import SQLAlchemyRepository
+from src.base_utils.base_errors import ERROR_404
+from src.base_utils.base_repository import SQLAlchemyRepository
 
 
 class DepartmentRepository(SQLAlchemyRepository):
     model = Department
+
+
+class ProjectRepository(SQLAlchemyRepository):
+    model = Project
+
+
+class TaskRepository(SQLAlchemyRepository):
+    model = Task
 
 
 class EmployeeRepository(SQLAlchemyRepository):
@@ -69,14 +77,6 @@ class EmployeeRepository(SQLAlchemyRepository):
         self.session.add(user)
         await self.session.commit()
         return {"detail": "success"}
-
-
-class ProjectRepository(SQLAlchemyRepository):
-    model = Project
-
-
-class TaskRepository(SQLAlchemyRepository):
-    model = Task
 
 
 class PhotoRepository(SQLAlchemyRepository):

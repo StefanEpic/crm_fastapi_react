@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import JWT_ACCESS_TOKEN_EXP_DAYS, JWT_REFRESH_TOKEN_EXP_DAYS, JWT_ALGORITHM, JWT_SECRET_KEY
 from src.apps.auth.models import User
 from src.db.base_db import get_session
-from src.utils.base_errors import ERROR_401
+from src.base_utils.base_errors import ERROR_401
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
