@@ -40,6 +40,7 @@ build-backend = "poetry.core.masonry.api"
 max-line-length = 120
 count = true
 ignore = ['E203']
+exclude = 'migrations'
 
 [tool.mypy]
 follow_imports = "silent"
@@ -51,6 +52,7 @@ check_untyped_defs = true
 no_implicit_reexport = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
+exclude = ['migrations/', 'tests/']
 
 [tool.isort]
 profile = "black"

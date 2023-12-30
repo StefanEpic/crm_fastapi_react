@@ -66,9 +66,9 @@ class Photo(Base):
 class Employee(Base):
     __tablename__ = "employee"
 
-    last_name: Mapped[str] = mapped_column(String(100))
-    first_name: Mapped[str] = mapped_column(String(100))
-    second_name: Mapped[str] = mapped_column(String(100))
+    family: Mapped[str] = mapped_column(String(100))
+    name: Mapped[str] = mapped_column(String(100))
+    surname: Mapped[str] = mapped_column(String(100))
     phone: Mapped[str] = mapped_column(String(12), unique=True)
     photo: Mapped["Photo"] = relationship(back_populates="employee", lazy="selectin")
     my_tasks: Mapped[Optional[List["Task"]]] = relationship(back_populates="author", lazy="selectin")

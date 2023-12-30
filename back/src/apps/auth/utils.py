@@ -90,7 +90,7 @@ async def verified_user(
         # check if user exists
         stmt = select(User).where(User.email == data["email"])
         user = await session.execute(stmt)
-        user = user.scalar_one()
+        user = user.scalar_one_or_none()
 
         if not user:
             raise ERROR_401

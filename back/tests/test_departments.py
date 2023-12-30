@@ -1,6 +1,7 @@
 from httpx import AsyncClient
 
-from tests.conftest import get_department_id
+from src.apps.crm.models import Department
+from tests.conftest import get_model_uuid
 
 base_url = "/departments"
 
@@ -29,7 +30,7 @@ async def test_get_list_departments(auth_ac_user: AsyncClient):
 
 
 async def test_get_one_department(auth_ac_user: AsyncClient):
-    uuid = str(await get_department_id("Department1"))
+    uuid = str(await get_model_uuid(Department, {"title": "Department1"}))
     uuid_url = base_url + "/" + uuid
     response = await auth_ac_user.get(uuid_url)
 
@@ -38,7 +39,7 @@ async def test_get_one_department(auth_ac_user: AsyncClient):
 
 
 async def test_edit_one_department(auth_ac_admin: AsyncClient):
-    uuid = str(await get_department_id("Department1"))
+    uuid = str(await get_model_uuid(Department, {"title": "New department"}))
     uuid_url = base_url + "/" + uuid
     data = {"title": "Changed title"}
     response = await auth_ac_admin.patch(uuid_url, json=data)
@@ -49,7 +50,7 @@ async def test_edit_one_department(auth_ac_admin: AsyncClient):
 
 
 async def test_delete_one_department(auth_ac_admin: AsyncClient):
-    uuid = str(await get_department_id("Department2"))
+    uuid = str(await get_model_uuid(Department, {"title": "Changed title"}))
     uuid_url = base_url + "/" + uuid
     response = await auth_ac_admin.delete(uuid_url)
 

@@ -22,11 +22,19 @@ class PhotoUpdate(BaseModel):
 
 
 class MyEmployeeCreate(BaseModel):
-    last_name: str
-    first_name: str
-    second_name: str
+    family: str
+    name: str
+    surname: str
     phone: str
     department_id: uuid.UUID
+
+
+class MyEmployeeUpdate(BaseModel):
+    family: Optional[str] = None
+    name: Optional[str] = None
+    surname: Optional[str] = None
+    phone: Optional[str] = None
+    department_id: Optional[uuid.UUID] = None
 
 
 class EmployeeCreate(MyEmployeeCreate):
@@ -38,9 +46,9 @@ class EmployeeRead(EmployeeCreate):
 
 
 class EmployeeUpdate(BaseModel):
-    last_name: Optional[str] = None
-    first_name: Optional[str] = None
-    second_name: Optional[str] = None
+    family: Optional[str] = None
+    name: Optional[str] = None
+    surname: Optional[str] = None
     phone: Optional[str] = None
     photo: Optional[PhotoCreate] = None
     department_id: Optional[uuid.UUID] = None
@@ -123,9 +131,9 @@ class DepartmentReadWithEmployees(DepartmentCreate):
 
 class EmployeeReadWithTasks(BaseModel):
     id: uuid.UUID
-    last_name: str
-    first_name: str
-    second_name: str
+    family: str
+    name: str
+    surname: str
     phone: str
     user: UserRead
     photo: Optional[PhotoRead] = None

@@ -38,7 +38,7 @@ class UserRepository(SQLAlchemyRepository):
         :return: model exemplar
         """
         res = await self.session.get(self.model, self_id)
-        if not res or res.is_active.is_(False) or res.is_verify.is_(False):
+        if not res or not res.is_active or not res.is_verify:
             raise ERROR_404
         return res
 
@@ -64,8 +64,9 @@ class UserRepository(SQLAlchemyRepository):
             if not res:
                 raise ERROR_404
             res_data = user.model_dump(exclude_unset=True)
-            hashed_password = Hasher.get_password_hash(res_data.pop("password"))
-            res_data.update({"password": hashed_password})
+            if "password" in res_data.keys():
+                hashed_password = Hasher.get_password_hash(res_data.pop("password"))
+                res_data.update({"password": hashed_password})
 
             for key, value in res_data.items():
                 setattr(res, key, value)
