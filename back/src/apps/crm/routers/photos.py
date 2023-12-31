@@ -36,7 +36,7 @@ async def get_one(
     return await PhotoRepository(session).get_one(photo_id)
 
 
-@router.put("", response_model=PhotoRead)
+@router.put("/{photo_id}", response_model=PhotoRead)
 async def put_one(
     employee_id: uuid.UUID,
     photo: UploadFile = File(...),
@@ -61,7 +61,7 @@ async def put_one_my(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await PhotoRepository(session).put_one_photo(current_user.id, photo)
+    return await PhotoRepository(session).put_one_photo_my(current_user.id, photo)
 
 
 @router.delete("/my/")

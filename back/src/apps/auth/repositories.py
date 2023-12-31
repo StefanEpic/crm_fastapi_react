@@ -8,10 +8,10 @@ from src.apps.auth.models import User
 from src.apps.auth.schemas import UserCreate, UserUpdate, ReturnTokenSchema, RefreshTokenSchema, UserRead
 from src.apps.auth.utils import Hasher, pwd_context, create_access_jwt, create_refresh_jwt, decode_jwt
 from src.base_utils.base_errors import ERROR_401, ERROR_404
-from src.base_utils.base_repository import SQLAlchemyRepository
+from src.base_utils.base_repository import SQLAlchemyRepository, RepositoryWithoutInactive
 
 
-class UserRepository(SQLAlchemyRepository):
+class UserRepository(SQLAlchemyRepository, RepositoryWithoutInactive):
     model = User
 
     async def get_list_users(self, offset: int, limit: int) -> List[UserRead]:

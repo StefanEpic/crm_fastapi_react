@@ -1,21 +1,31 @@
 import uuid
-from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import List, Dict, Union
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.base_utils.base_errors import ERROR_404
+from src.db.base_db import Base
 
 
-class AbstractRepository(ABC):
-    @abstractmethod
-    async def get_list(self):
-        raise NotImplementedError
+async def get_obj_by_params(model: Base, filter_params: dict, session: AsyncSession) -> Union[BaseModel, None]:
+    """
+    Get model exemplar by user id
+    :param model: ORM model
+    :param filter_params: params for filter model
+    :param session: async session
+    :return: model exemplar
+    """
+    stmt = select(model).filter_by(**filter_params)
+    res = await session.execute(stmt)
+    res = res.scalar_one_or_none()
+    if not res:
+        raise ERROR_404
+    return res
 
 
-class BaseRepository(AbstractRepository):
+class BaseCRUDRepository:
     """
     Base CRUD repository
     """
@@ -43,10 +53,7 @@ class BaseRepository(AbstractRepository):
         :param self_id: uuid of the exemplar
         :return: model exemplar
         """
-        res = await self.session.get(self.model, self_id)
-        if not res:
-            raise ERROR_404
-        return res
+        return await get_obj_by_params(self.model, {"id": self_id}, self.session)
 
     async def add_one(self, data: BaseModel, user_id: uuid.UUID = None) -> BaseModel:
         """
@@ -77,9 +84,7 @@ class BaseRepository(AbstractRepository):
         :return: exemplar data
         """
         try:
-            res = await self.session.get(self.model, self_id)
-            if not res:
-                raise ERROR_404
+            res = await get_obj_by_params(self.model, {"id": self_id}, self.session)
             res_data = data.model_dump(exclude_unset=True)
             for key, value in res_data.items():
                 setattr(res, key, value)
@@ -96,18 +101,38 @@ class BaseRepository(AbstractRepository):
         :param self_id: uuid model exemplar
         :return: dictionary
         """
-        res = await self.session.get(self.model, self_id)
-        if not res:
-            raise ERROR_404
+        res = await get_obj_by_params(self.model, {"id": self_id}, self.session)
         await self.session.delete(res)
         await self.session.commit()
         return {"detail": "success"}
 
 
-class BaseRepositoryWithoutInactive(BaseRepository):
+class SQLAlchemyRepository(BaseCRUDRepository):
+    """
+    Base CRUD repository with PUT method
+    """
+
+    async def put_one(self, self_id: uuid.UUID, data: BaseModel) -> BaseModel:
+        """
+        Put one model exemplar
+        :param self_id: uuid model exemplar
+        :param data: new data
+        :return: exemplar data
+        """
+        res = await self.session.get(self.model, self_id)
+        if not res:
+            return await super().add_one(data)
+        else:
+            return await super().edit_one(self_id, data)
+
+
+class RepositoryWithoutInactive:
     """
     Repository for work with models with is_active field
     """
+
+    model = None
+    session = None
 
     async def get_list_without_inactive(self, offset: int, limit: int) -> List[BaseModel]:
         """
@@ -127,10 +152,12 @@ class BaseRepositoryWithoutInactive(BaseRepository):
         :param self_id: uuid of the exemplar
         :return: model exemplar
         """
-        res = await self.session.get(self.model, self_id)
-        if not res or res.is_active.is_(False):
-            raise ERROR_404
-        return res
+        # res = await self.session.get(self.model, self_id)
+        # if not res or res.is_active is None:
+        #     raise ERROR_404
+        # return res
+        #
+        return await get_obj_by_params(self.model, {"id": self_id, "is_active": True}, self.session)
 
     async def deactivate_one(self, self_id: uuid.UUID) -> Dict:
         """
@@ -138,29 +165,8 @@ class BaseRepositoryWithoutInactive(BaseRepository):
         :param self_id: uuid model exemplar
         :return: dictionary
         """
-        res = await self.session.get(self.model, self_id)
-        if not res:
-            raise ERROR_404
+        res = await get_obj_by_params(self.model, {"id": self_id}, self.session)
         res.is_active = False
         self.session.add(res)
         await self.session.commit()
         return {"detail": "success"}
-
-
-class SQLAlchemyRepository(BaseRepositoryWithoutInactive):
-    """
-    Base CRUD repository with PUT method
-    """
-
-    async def put_one(self, self_id: uuid.UUID, data: BaseModel) -> BaseModel:
-        """
-        Put one model exemplar
-        :param self_id: uuid model exemplar
-        :param data: new data
-        :return: exemplar data
-        """
-        res = await self.session.get(self.model, self_id)
-        if not res:
-            return await super().add_one(data)
-        else:
-            return await super().edit_one(self_id, data)
