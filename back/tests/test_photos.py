@@ -81,7 +81,7 @@ async def test_add_one_photo_my(auth_ac_user: AsyncClient):
         response = await auth_ac_user.put(uuid_url, files={"photo": photo})
 
     assert response.status_code == 200
-    assert response.json()['employee_id'] == employee_id
+    assert response.json()["employee_id"] == employee_id
 
 
 async def test_delete_one_photo_my(auth_ac_user: AsyncClient):
@@ -89,4 +89,4 @@ async def test_delete_one_photo_my(auth_ac_user: AsyncClient):
     response = await auth_ac_user.delete(uuid_url)
 
     assert response.status_code == 200
-    assert response.json()['detail'] == 'success'
+    assert response.json()["detail"] == "success"

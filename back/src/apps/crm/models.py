@@ -28,6 +28,7 @@ task_project = Table(
     Base.metadata,
     Column("task_id", ForeignKey("task.id")),
     Column("project_id", ForeignKey("project.id")),
+    UniqueConstraint("task_id", "project_id", name="uix_task_project"),
 )
 
 task_employee = Table(
@@ -35,6 +36,7 @@ task_employee = Table(
     Base.metadata,
     Column("task_id", ForeignKey("task.id")),
     Column("employee_id", ForeignKey("employee.id")),
+    UniqueConstraint("task_id", "employee_id", name="uix_task_employee"),
 )
 
 
@@ -71,10 +73,8 @@ class Employee(Base):
     surname: Mapped[str] = mapped_column(String(100))
     phone: Mapped[str] = mapped_column(String(12), unique=True)
     photo: Mapped["Photo"] = relationship(back_populates="employee", lazy="selectin")
-    my_tasks: Mapped[Optional[List["Task"]]] = relationship(back_populates="author", lazy="selectin")
-    tasks: Mapped[Optional[List["Task"]]] = relationship(
-        secondary=task_employee, back_populates="employees", lazy="selectin"
-    )
+    my_tasks: Mapped[List["Task"]] = relationship(back_populates="author", lazy="selectin")
+    tasks: Mapped[List["Task"]] = relationship(secondary=task_employee, back_populates="employees", lazy="selectin")
 
     department_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("department.id"))
     department: Mapped["Department"] = relationship(back_populates="employees", lazy="selectin")
@@ -106,9 +106,7 @@ class Project(Base):
     description: Mapped[Optional[str]] = mapped_column(default="")
     is_active: Mapped[bool] = mapped_column(default=True)
 
-    tasks: Mapped[Optional[List["Task"]]] = relationship(
-        secondary=task_project, back_populates="projects", lazy="selectin"
-    )
+    tasks: Mapped[List["Task"]] = relationship(secondary=task_project, back_populates="projects", lazy="selectin")
 
     def __str__(self):
         return self.title
@@ -126,10 +124,10 @@ class Task(Base):
     is_active: Mapped[bool] = mapped_column(default=True)
 
     author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employee.id"))
-    author: Mapped["Employee"] = relationship(back_populates="my_tasks", lazy="selectin")
+    author: Mapped[Employee] = relationship(back_populates="my_tasks", lazy="selectin")
 
-    projects: Mapped[List["Project"]] = relationship(secondary=task_project, back_populates="tasks", lazy="selectin")
-    employees: Mapped[List["Employee"]] = relationship(secondary=task_employee, back_populates="tasks", lazy="selectin")
+    projects: Mapped[List[Project]] = relationship(secondary=task_project, back_populates="tasks", lazy="selectin")
+    employees: Mapped[List[Employee]] = relationship(secondary=task_employee, back_populates="tasks", lazy="selectin")
 
     def __str__(self):
         return self.title

@@ -18,7 +18,7 @@ itsdangerous = "^2.1.2"
 sqladmin = {extras = ["full"], version = "^0.16.0"}
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 psycopg = {extras = ["binary"], version = "^3.1.16"}
-sqlalchemy = "2.0.20"
+sqlalchemy = "2.0.25"
 fastapi = {extras = ["all"], version = "^0.108.0"}
 
 

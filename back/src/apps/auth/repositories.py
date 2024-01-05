@@ -56,8 +56,9 @@ class UserRepository(SQLAlchemyRepository, RepositoryWithoutInactive):
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except IntegrityError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=str(e.orig).split(':')[-1].replace('\n', '').strip())
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.orig).split(":")[-1].replace("\n", "").strip()
+            )
 
     async def edit_one_user(self, user_id: uuid.UUID, user: UserUpdate):
         try:
@@ -84,8 +85,10 @@ class AuthRepository(UserRepository):
     async def get_access_token(self, data: UserCreate) -> ReturnTokenSchema:
         # check if email exists
         stmt = select(User).where(
-            User.email == data.email, User.is_active.is_(True), User.is_verify.is_(True),
-            User.permission != UserPermission.none
+            User.email == data.email,
+            User.is_active.is_(True),
+            User.is_verify.is_(True),
+            User.permission != UserPermission.none,
         )
         user = await self.session.execute(stmt)
         user = user.scalar_one_or_none()
@@ -112,8 +115,10 @@ class AuthRepository(UserRepository):
             raise ERROR_401
         # check if user exists
         stmt = select(User).where(
-            User.email == data["email"], User.is_active.is_(True), User.is_verify.is_(True),
-            User.permission != UserPermission.none
+            User.email == data["email"],
+            User.is_active.is_(True),
+            User.is_verify.is_(True),
+            User.permission != UserPermission.none,
         )
         user = await self.session.execute(stmt)
         user = user.scalar_one_or_none()

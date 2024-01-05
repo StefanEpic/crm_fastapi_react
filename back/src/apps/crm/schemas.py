@@ -1,24 +1,24 @@
 import datetime
-import uuid
 from typing import Optional, List
 from pydantic import BaseModel
 from src.apps.auth.schemas import UserRead
-from src.apps.crm.models import TaskStatus, TaskPriority, Task
+from src.apps.crm.models import TaskStatus, TaskPriority
+from pydantic import UUID4
 
 
 class PhotoCreate(BaseModel):
     url: str
-    employee_id: uuid.UUID
+    employee_id: UUID4
 
 
 class PhotoRead(PhotoCreate):
-    id: uuid.UUID
+    id: UUID4
     path: str
 
 
 class PhotoUpdate(BaseModel):
     url: Optional[str] = None
-    employee_id: Optional[uuid.UUID] = None
+    employee_id: Optional[UUID4] = None
 
 
 class MyEmployeeCreate(BaseModel):
@@ -26,7 +26,7 @@ class MyEmployeeCreate(BaseModel):
     name: str
     surname: str
     phone: str
-    department_id: uuid.UUID
+    department_id: UUID4
 
 
 class MyEmployeeUpdate(BaseModel):
@@ -34,15 +34,15 @@ class MyEmployeeUpdate(BaseModel):
     name: Optional[str] = None
     surname: Optional[str] = None
     phone: Optional[str] = None
-    department_id: Optional[uuid.UUID] = None
+    department_id: Optional[UUID4] = None
 
 
 class EmployeeCreate(MyEmployeeCreate):
-    user_id: uuid.UUID
+    user_id: UUID4
 
 
 class EmployeeRead(EmployeeCreate):
-    id: uuid.UUID
+    id: UUID4
 
 
 class EmployeeUpdate(BaseModel):
@@ -51,8 +51,8 @@ class EmployeeUpdate(BaseModel):
     surname: Optional[str] = None
     phone: Optional[str] = None
     photo: Optional[PhotoCreate] = None
-    department_id: Optional[uuid.UUID] = None
-    user_id: Optional[uuid.UUID] = None
+    department_id: Optional[UUID4] = None
+    user_id: Optional[UUID4] = None
 
 
 class DepartmentCreate(BaseModel):
@@ -60,7 +60,7 @@ class DepartmentCreate(BaseModel):
 
 
 class DepartmentRead(DepartmentCreate):
-    id: uuid.UUID
+    id: UUID4
 
 
 class DepartmentUpdate(BaseModel):
@@ -73,7 +73,7 @@ class ProjectCreate(BaseModel):
 
 
 class ProjectRead(ProjectCreate):
-    id: uuid.UUID
+    id: UUID4
     is_active: bool
 
 
@@ -89,8 +89,8 @@ class MyTaskCreate(BaseModel):
     priority: Optional[TaskPriority] = None
     start: Optional[datetime.datetime] = None
     end: Optional[datetime.datetime] = None
-    projects: List[uuid.UUID]
-    employees: List[uuid.UUID]
+    projects: List[UUID4]
+    employees: List[UUID4]
 
 
 class MyTaskUpdate(BaseModel):
@@ -100,25 +100,27 @@ class MyTaskUpdate(BaseModel):
     priority: Optional[TaskPriority] = None
     start: Optional[datetime.datetime] = None
     end: Optional[datetime.datetime] = None
-    projects: Optional[List[uuid.UUID]] = None
-    employees: Optional[List[uuid.UUID]] = None
+    projects: Optional[List[UUID4]] = None
+    employees: Optional[List[UUID4]] = None
 
 
 class TaskCreate(MyTaskCreate):
-    author_id: uuid.UUID
+    author_id: UUID4
 
 
 class TaskRead(TaskCreate):
-    id: uuid.UUID
+    id: UUID4
     is_active: bool
+    projects: List[ProjectRead]
+    employees: List[EmployeeRead]
 
 
 class TaskUpdate(MyTaskUpdate):
-    author_id: Optional[uuid.UUID]
+    author_id: Optional[UUID4]
 
 
 class TaskReadWithProjectsAndEmployees(BaseModel):
-    id: uuid.UUID
+    id: UUID4
     title: str
     description: Optional[str] = None
     status: TaskStatus
@@ -127,17 +129,17 @@ class TaskReadWithProjectsAndEmployees(BaseModel):
     end: Optional[datetime.datetime] = None
     is_active: bool
     author: EmployeeRead
-    projects: Optional[List[EmployeeRead]] = None
-    employees: Optional[List[EmployeeRead]] = None
+    projects: List[EmployeeRead]
+    employees: List[EmployeeRead]
 
 
 class DepartmentReadWithEmployees(DepartmentCreate):
-    id: uuid.UUID
+    id: UUID4
     employees: Optional[List[EmployeeRead]] = None
 
 
 class EmployeeReadWithTasks(BaseModel):
-    id: uuid.UUID
+    id: UUID4
     family: str
     name: str
     surname: str

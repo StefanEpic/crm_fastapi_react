@@ -1,11 +1,9 @@
 import datetime
 import enum
-import uuid
 
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 from src.db.base_db import Base
-from sqlalchemy.dialects.postgresql import UUID
 
 
 class UserPermission(enum.Enum):

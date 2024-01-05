@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from config import MEDIA_URL, BASE_SITE_URL
 from src.apps.auth.models import User
-from src.apps.crm.models import Department, Photo, Employee, Project, Task
+from src.apps.crm.models import Department, Photo, Employee, Project, Task, task_project, task_employee
 from src.apps.crm.schemas import EmployeeRead, EmployeeReadWithTasks, MyEmployeeUpdate, MyTaskCreate, TaskCreate
 from src.base_utils.base_errors import ERROR_404
 from src.base_utils.base_repository import SQLAlchemyRepository, RepositoryWithoutInactive, get_obj_by_params
@@ -27,23 +27,27 @@ class TaskRepository(SQLAlchemyRepository):
 
     async def add_one_task(self, data: TaskCreate):
         try:
-            task = self.model(**data.model_dump())
-            for project_id in task.projects:
-                project = await get_obj_by_params(Project, {'id': project_id}, self.session)
-                task.projects.append(project)
-            for employee_id in task.employees:
-                employee = await get_obj_by_params(Employee, {'id': employee_id}, self.session)
-                task.projects.append(employee)
-
+            # Workaround for solve bag sqlalchemy "object don't have _sa_instance_state"
+            task = self.model(**data.model_dump(exclude=["projects", "employees"]))
             self.session.add(task)
+            await self.session.commit()
+
+            for project_id in data.projects:
+                project = await get_obj_by_params(Project, {"id": project_id}, self.session)
+                project_res = task_project.insert().values(task_id=task.id, project_id=project.id)
+                await self.session.execute(project_res)
+            for employee_id in data.employees:
+                employee = await get_obj_by_params(Employee, {"id": employee_id}, self.session)
+                employee_res = task_employee.insert().values(task_id=task.id, employee_id=employee.id)
+                await self.session.execute(employee_res)
+
             await self.session.commit()
             await self.session.refresh(task)
             return task
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
         except IntegrityError as e:
-            raise HTTPException(status_code=400,
-                                detail=str(e.orig).split(':')[-1].replace('\n', '').strip())
+            raise HTTPException(status_code=400, detail=str(e.orig).split(":")[-1].replace("\n", "").strip())
 
     async def edit_one_task(self, user_id: uuid.UUID, data: BaseModel):
         task = await get_obj_by_params(Task, {"user_id": user_id}, self.session)
@@ -116,7 +120,7 @@ class EmployeeRepository(SQLAlchemyRepository):
         return await get_obj_by_params(Employee, {"user_id": user_id}, self.session)
 
     async def edit_one_employee_me(
-            self, user_id: uuid.UUID, data: MyEmployeeUpdate
+        self, user_id: uuid.UUID, data: MyEmployeeUpdate
     ) -> Union[EmployeeReadWithTasks, None]:
         """
         Edit one my employee exemplar
@@ -133,11 +137,7 @@ class EmployeeRepository(SQLAlchemyRepository):
         :param employee_id: uuid model exemplar
         :return: dictionary
         """
-        stmt = (
-            select(User)
-            .join(Employee, User.id == Employee.user_id)
-            .where(Employee.id == employee_id)
-        )
+        stmt = select(User).join(Employee, User.id == Employee.user_id).where(Employee.id == employee_id)
         user = await self.session.execute(stmt)
         user = user.scalar_one_or_none()
         if not user:
@@ -177,8 +177,9 @@ class PhotoRepository(SQLAlchemyRepository, RepositoryWithoutInactive):
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except IntegrityError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=str(e.orig).split(':')[-1].replace('\n', '').strip())
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.orig).split(":")[-1].replace("\n", "").strip()
+            )
 
     async def __delete_photo(self, photo: Photo) -> dict:
         os.remove(photo.path)
@@ -194,7 +195,7 @@ class PhotoRepository(SQLAlchemyRepository, RepositoryWithoutInactive):
         return await self.__put_photo(user_id, image)
 
     async def delete_one_photo(self, photo_id: uuid.UUID):
-        photo = await get_obj_by_params(self.model, {'id': photo_id}, self.session)
+        photo = await get_obj_by_params(self.model, {"id": photo_id}, self.session)
         if not photo:
             raise ERROR_404
         return await self.__delete_photo(photo)

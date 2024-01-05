@@ -74,8 +74,9 @@ class BaseCRUDRepository:
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except IntegrityError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=str(e.orig).split(':')[-1].replace('\n', '').strip())
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.orig).split(":")[-1].replace("\n", "").strip()
+            )
 
     async def edit_one(self, self_id: uuid.UUID, data: BaseModel) -> BaseModel:
         """

@@ -1,10 +1,10 @@
 import datetime
-import uuid
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
 from src.apps.auth.models import UserPermission
+from pydantic import UUID4
 
 
 class UserCreate(BaseModel):
@@ -13,7 +13,7 @@ class UserCreate(BaseModel):
 
 
 class UserRead(BaseModel):
-    id: uuid.UUID
+    id: UUID4
     email: EmailStr
     is_active: bool
     is_verify: bool
