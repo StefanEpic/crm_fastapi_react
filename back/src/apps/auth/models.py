@@ -1,8 +1,11 @@
 import datetime
 import enum
+import uuid
+
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 from src.db.base_db import Base
+from sqlalchemy.dialects.postgresql import UUID
 
 
 class UserPermission(enum.Enum):
@@ -17,7 +20,7 @@ class User(Base):
 
     email: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     password: Mapped[str]
-    is_active: Mapped[bool] = mapped_column(default=True)
+    is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
     is_verify: Mapped[bool] = mapped_column(default=False)
     registration_date: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow)
     permission: Mapped[UserPermission] = mapped_column(default=UserPermission.none)

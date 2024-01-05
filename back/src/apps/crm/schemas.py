@@ -3,7 +3,7 @@ import uuid
 from typing import Optional, List
 from pydantic import BaseModel
 from src.apps.auth.schemas import UserRead
-from src.apps.crm.models import TaskStatus, TaskPriority
+from src.apps.crm.models import TaskStatus, TaskPriority, Task
 
 
 class PhotoCreate(BaseModel):

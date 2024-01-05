@@ -9,8 +9,7 @@ DB_HOST = os.environ.get("DB_HOST")
 DB_NAME = os.environ.get("DB_NAME")
 DB_PORT = os.environ.get("DB_PORT")
 
-# DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-DATABASE_URL = "sqlite+aiosqlite:///sqlite.db"
+DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 POSTGRES_DB = os.environ.get("POSTGRES_DB")
 POSTGRES_USER = os.environ.get("POSTGRES_USER")

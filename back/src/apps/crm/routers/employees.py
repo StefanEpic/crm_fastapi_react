@@ -73,7 +73,6 @@ async def delete_one(
 
 
 @router.get("/me/", response_model=EmployeeReadWithTasks)
-@cache(expire=30)
 async def get_one_employee_me(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),

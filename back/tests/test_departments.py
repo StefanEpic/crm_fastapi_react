@@ -19,7 +19,7 @@ async def test_add_one_department_invalid_title_unique(auth_ac_admin: AsyncClien
     response = await auth_ac_admin.post(base_url, json=data)
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "UNIQUE constraint failed: department.title"
+    assert response.json()["detail"] == "Key (title)=(New department) already exists."
 
 
 async def test_get_list_departments(auth_ac_user: AsyncClient):

@@ -40,7 +40,7 @@ async def test_add_one_employee_invalid_user_unique(auth_ac_admin: AsyncClient):
     response = await auth_ac_admin.post(base_url, json=data)
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "UNIQUE constraint failed: employee.user_id"
+    assert response.json()["detail"] == f"Key (user_id)=({user_id}) already exists."
 
 
 async def test_get_list_employees(auth_ac_user: AsyncClient):

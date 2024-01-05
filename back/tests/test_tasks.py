@@ -1,6 +1,6 @@
 from httpx import AsyncClient
 
-from src.apps.crm.models import Department
+from src.apps.crm.models import Department, Project, Employee
 from tests.conftest import get_model_uuid
 
 base_url = "/tasks"
@@ -11,28 +11,29 @@ async def test_init_employee(auth_ac_admin: AsyncClient):
     uuid_url = "/employees/me/"
 
     data = {
-        "family": "Family",
-        "name": "Name",
-        "surname": "Surname",
+        "family": "Admin",
+        "name": "Admin",
+        "surname": "Admin",
         "phone": "123456",
         "department_id": str(department_id),
     }
     await auth_ac_admin.post(uuid_url, json=data)
 
 
-# async def test_add_one_task(auth_ac_admin: AsyncClient):
-#     project_id = str(await get_model_uuid(Project, {"title": "Project1"}))
-#     employee_id = str(await get_model_uuid(Employee, {"family": "Family"}))
-#     data = {
-#         "title": "Task1",
-#         "projects": [project_id],
-#         "employees": [employee_id],
-#         'author_id': employee_id
-#     }
-#     response = await auth_ac_admin.post(base_url, json=data)
-#
-#     assert response.status_code == 200
-#     assert response.json()["title"] == data["title"]
+async def test_add_one_task(auth_ac_admin: AsyncClient):
+    project_id = str(await get_model_uuid(Project, {"title": "Project1"}))
+    employee_id = str(await get_model_uuid(Employee, {"family": "Admin"}))
+    print(project_id, employee_id)
+    data = {
+        "title": "Task1",
+        "projects": [project_id],
+        "employees": [employee_id],
+        'author_id': employee_id
+    }
+    response = await auth_ac_admin.post(base_url, json=data)
+
+    assert response.status_code == 200
+    assert response.json()["title"] == data["title"]
 
 #
 # async def test_add_one_task_invalid_title_unique(auth_ac_admin: AsyncClient):
@@ -41,8 +42,8 @@ async def test_init_employee(auth_ac_admin: AsyncClient):
 #
 #     assert response.status_code == 400
 #     assert response.json()["detail"] == "UNIQUE constraint failed: task.title"
-
-
+#
+#
 # async def test_get_list_tasks(auth_ac_user: AsyncClient):
 #     response = await auth_ac_user.get(base_url)
 #

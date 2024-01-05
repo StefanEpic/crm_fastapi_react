@@ -19,7 +19,7 @@ async def test_add_one_user_invalid_email_unique(auth_ac: AsyncClient):
     response = await auth_ac.post(base_url, json=data)
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "UNIQUE constraint failed: user.email"
+    assert response.json()["detail"] == "Key (email)=(test@test.com) already exists."
 
 
 async def test_get_list_users(auth_ac_user: AsyncClient):

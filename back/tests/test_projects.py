@@ -19,7 +19,7 @@ async def test_add_one_project_invalid_title_unique(auth_ac_admin: AsyncClient):
     response = await auth_ac_admin.post(base_url, json=data)
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "UNIQUE constraint failed: project.title"
+    assert response.json()["detail"] == "Key (title)=(New project) already exists."
 
 
 async def test_get_list_projects(auth_ac_user: AsyncClient):

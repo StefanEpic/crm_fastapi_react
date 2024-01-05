@@ -25,6 +25,30 @@ class ProjectRepository(SQLAlchemyRepository, RepositoryWithoutInactive):
 class TaskRepository(SQLAlchemyRepository):
     model = Task
 
+    async def add_one_task(self, data: TaskCreate):
+        try:
+            task = self.model(**data.model_dump())
+            for project_id in task.projects:
+                project = await get_obj_by_params(Project, {'id': project_id}, self.session)
+                task.projects.append(project)
+            for employee_id in task.employees:
+                employee = await get_obj_by_params(Employee, {'id': employee_id}, self.session)
+                task.projects.append(employee)
+
+            self.session.add(task)
+            await self.session.commit()
+            await self.session.refresh(task)
+            return task
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except IntegrityError as e:
+            raise HTTPException(status_code=400,
+                                detail=str(e.orig).split(':')[-1].replace('\n', '').strip())
+
+    async def edit_one_task(self, user_id: uuid.UUID, data: BaseModel):
+        task = await get_obj_by_params(Task, {"user_id": user_id}, self.session)
+        return await super().edit_one(task.id, data)
+
     async def add_one_task_my(self, data: MyTaskCreate, author_id: uuid.UUID):
         data = data.model_dump()
         task = TaskCreate(
@@ -92,7 +116,7 @@ class EmployeeRepository(SQLAlchemyRepository):
         return await get_obj_by_params(Employee, {"user_id": user_id}, self.session)
 
     async def edit_one_employee_me(
-        self, user_id: uuid.UUID, data: MyEmployeeUpdate
+            self, user_id: uuid.UUID, data: MyEmployeeUpdate
     ) -> Union[EmployeeReadWithTasks, None]:
         """
         Edit one my employee exemplar
@@ -103,16 +127,21 @@ class EmployeeRepository(SQLAlchemyRepository):
         employee = await get_obj_by_params(Employee, {"user_id": user_id}, self.session)
         return await super().edit_one(employee.id, data)
 
-    async def deactivate_one_employee(self, self_id: uuid.UUID) -> dict:
+    async def deactivate_one_employee(self, employee_id: uuid.UUID) -> dict:
         """
         Deactivate one employee exemplar
-        :param self_id: uuid model exemplar
+        :param employee_id: uuid model exemplar
         :return: dictionary
         """
-        res = await self.session.get(self.model, self_id)
-        if not res:
+        stmt = (
+            select(User)
+            .join(Employee, User.id == Employee.user_id)
+            .where(Employee.id == employee_id)
+        )
+        user = await self.session.execute(stmt)
+        user = user.scalar_one_or_none()
+        if not user:
             raise ERROR_404
-        user = await self.session.get(User, res.user_id)
         user.is_active = False
         self.session.add(user)
         await self.session.commit()
@@ -148,7 +177,14 @@ class PhotoRepository(SQLAlchemyRepository, RepositoryWithoutInactive):
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except IntegrityError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.orig))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=str(e.orig).split(':')[-1].replace('\n', '').strip())
+
+    async def __delete_photo(self, photo: Photo) -> dict:
+        os.remove(photo.path)
+        await self.session.delete(photo)
+        await self.session.commit()
+        return {"detail": "success"}
 
     async def put_one_photo(self, employee_id: uuid.UUID, image: File):
         employee = await get_obj_by_params(Employee, {"id": employee_id}, self.session)
@@ -158,8 +194,20 @@ class PhotoRepository(SQLAlchemyRepository, RepositoryWithoutInactive):
         return await self.__put_photo(user_id, image)
 
     async def delete_one_photo(self, photo_id: uuid.UUID):
-        photo = await get_obj_by_params(Photo, {"id": photo_id}, self.session)
-        os.remove(photo.path)
-        await self.session.delete(photo)
-        await self.session.commit()
-        return {"detail": "success"}
+        photo = await get_obj_by_params(self.model, {'id': photo_id}, self.session)
+        if not photo:
+            raise ERROR_404
+        return await self.__delete_photo(photo)
+
+    async def delete_one_photo_my(self, user_id: uuid.UUID):
+        stmt = (
+            select(self.model)
+            .join(Employee, self.model.employee_id == Employee.id)
+            .join(User, User.id == Employee.user_id)
+            .where(User.id == user_id)
+        )
+        photo = await self.session.execute(stmt)
+        photo = photo.scalar_one_or_none()
+        if not photo:
+            raise ERROR_404
+        return await self.__delete_photo(photo)

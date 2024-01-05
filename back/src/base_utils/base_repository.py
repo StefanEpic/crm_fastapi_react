@@ -74,7 +74,8 @@ class BaseCRUDRepository:
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except IntegrityError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.orig))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=str(e.orig).split(':')[-1].replace('\n', '').strip())
 
     async def edit_one(self, self_id: uuid.UUID, data: BaseModel) -> BaseModel:
         """
@@ -152,11 +153,6 @@ class RepositoryWithoutInactive:
         :param self_id: uuid of the exemplar
         :return: model exemplar
         """
-        # res = await self.session.get(self.model, self_id)
-        # if not res or res.is_active is None:
-        #     raise ERROR_404
-        # return res
-        #
         return await get_obj_by_params(self.model, {"id": self_id, "is_active": True}, self.session)
 
     async def deactivate_one(self, self_id: uuid.UUID) -> Dict:

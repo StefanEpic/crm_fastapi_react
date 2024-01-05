@@ -49,7 +49,7 @@ async def add_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_moderator),
 ):
-    return await TaskRepository(session).add_one(task)
+    return await TaskRepository(session).add_one_task(task)
 
 
 @router.patch("/{task_id}", response_model=TaskRead)

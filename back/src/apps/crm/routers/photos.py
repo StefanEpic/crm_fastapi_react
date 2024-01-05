@@ -67,6 +67,6 @@ async def put_one_my(
 @router.delete("/my/")
 async def delete_one_my(
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(check_permission_moderator),
+    current_user: User = Depends(check_permission_user),
 ):
-    return await PhotoRepository(session).delete_one_photo(current_user.id)
+    return await PhotoRepository(session).delete_one_photo_my(current_user.id)

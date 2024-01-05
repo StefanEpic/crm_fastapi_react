@@ -67,7 +67,6 @@ async def get_me(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    print(UserRead)
     return await UserRepository(session).get_one(current_user.id)
 
 

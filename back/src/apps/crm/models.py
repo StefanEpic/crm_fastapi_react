@@ -2,7 +2,7 @@ import datetime
 import enum
 import uuid
 from typing import Optional, List
-from sqlalchemy import Column, ForeignKey, Table, String, UniqueConstraint, Text
+from sqlalchemy import Column, ForeignKey, Table, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, validates, relationship
 from src.apps.auth.models import User
 from src.db.base_db import Base
@@ -103,7 +103,7 @@ class Project(Base):
     __tablename__ = "project"
 
     title: Mapped[str] = mapped_column(String(100), unique=True, index=True)
-    description: Mapped[Optional[str]] = mapped_column(Text(1000), nullable=False, default="")
+    description: Mapped[Optional[str]] = mapped_column(default="")
     is_active: Mapped[bool] = mapped_column(default=True)
 
     tasks: Mapped[Optional[List["Task"]]] = relationship(
@@ -118,7 +118,7 @@ class Task(Base):
     __tablename__ = "task"
 
     title: Mapped[str] = mapped_column(String(100))
-    description: Mapped[Optional[str]] = mapped_column(Text(1000), nullable=False, default="")
+    description: Mapped[Optional[str]] = mapped_column(default="")
     status: Mapped[Optional[TaskStatus]] = mapped_column(default=TaskStatus.todo)
     priority: Mapped[Optional[TaskPriority]] = mapped_column(default=TaskPriority.none)
     start: Mapped[Optional[datetime.datetime]] = mapped_column(default=datetime.datetime.utcnow)
@@ -129,7 +129,6 @@ class Task(Base):
     author: Mapped["Employee"] = relationship(back_populates="my_tasks", lazy="selectin")
 
     projects: Mapped[List["Project"]] = relationship(secondary=task_project, back_populates="tasks", lazy="selectin")
-
     employees: Mapped[List["Employee"]] = relationship(secondary=task_employee, back_populates="tasks", lazy="selectin")
 
     def __str__(self):

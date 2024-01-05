@@ -1,5 +1,3 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
@@ -10,6 +8,10 @@ from src.apps.apps_routers import apps_routers
 from src.apps.sqladmin.admin_auth import authentication_backend
 from src.apps.sqladmin.routers import admin_routers
 from src.db.base_db import engine
+
+from src.apps.auth.models import *
+from src.apps.crm.models import *
+
 
 app = FastAPI(title="Kanban API", summary="API for Kanban task manager", version="1.0")
 app.add_middleware(
@@ -35,7 +37,7 @@ for router in apps_routers:
     app.include_router(router)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> None:
-    redis = aioredis.from_url("redis://redis")
+@app.on_event("startup")
+async def startup():
+    redis = aioredis.from_url("redis://localhost", encoding="utf8", decode_responses=True)
     FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
