@@ -1,15 +1,15 @@
 import os
 import uuid
-from typing import List, Union
+from typing import List, Union, Dict
 from fastapi import File, status
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DBAPIError
 from config import MEDIA_URL, BASE_SITE_URL
-from src.apps.auth.models import User
+from src.apps.auth.models import User, UserPermission
 from src.apps.crm.models import Department, Photo, Employee, Project, Task, task_project, task_employee
-from src.apps.crm.schemas import EmployeeRead, EmployeeReadWithTasks, MyEmployeeUpdate, MyTaskCreate, TaskCreate
+from src.apps.crm.schemas import EmployeeRead, EmployeeReadWithTasks, MyEmployeeUpdate
 from src.base_utils.base_errors import ERROR_404
 from src.base_utils.base_repository import SQLAlchemyRepository, RepositoryWithoutInactive, get_obj_by_params
 
@@ -22,13 +22,16 @@ class ProjectRepository(SQLAlchemyRepository, RepositoryWithoutInactive):
     model = Project
 
 
-class TaskRepository(SQLAlchemyRepository):
+class TaskRepository(SQLAlchemyRepository, RepositoryWithoutInactive):
     model = Task
 
-    async def add_one_task(self, data: TaskCreate):
+    async def add_one_task(self, data: BaseModel, author_id: uuid.UUID = None):
         try:
             # Workaround for solve bag sqlalchemy "object don't have _sa_instance_state"
             task = self.model(**data.model_dump(exclude=["projects", "employees"]))
+            if author_id:
+                employee = await get_obj_by_params(Employee, {"user_id": author_id}, self.session)
+                task.author_id = employee.id
             self.session.add(task)
             await self.session.commit()
 
@@ -48,29 +51,55 @@ class TaskRepository(SQLAlchemyRepository):
             raise HTTPException(status_code=400, detail=str(e))
         except IntegrityError as e:
             raise HTTPException(status_code=400, detail=str(e.orig).split(":")[-1].replace("\n", "").strip())
+        except DBAPIError as e:
+            raise HTTPException(status_code=400, detail=str(e.orig).split(":")[-1].replace("\n", "").strip())
 
-    async def edit_one_task(self, user_id: uuid.UUID, data: BaseModel):
-        task = await get_obj_by_params(Task, {"user_id": user_id}, self.session)
-        return await super().edit_one(task.id, data)
+    async def edit_one_task(self, self_id: uuid.UUID, data: BaseModel, author_id: uuid.UUID = None):
+        try:
+            # Workaround for solve bag sqlalchemy "object don't have _sa_instance_state"
+            task = await get_obj_by_params(Task, {"id": self_id}, self.session)
+            employee = await get_obj_by_params(Employee, {"user_id": author_id}, self.session)
+            if task.author_id != employee.id:
+                if (
+                    employee.user.permission != UserPermission.moderator
+                    and employee.user.permission != UserPermission.admin
+                ):
+                    raise HTTPException(status_code=403, detail="Can't change task, where you are not author")
 
-    async def add_one_task_my(self, data: MyTaskCreate, author_id: uuid.UUID):
-        data = data.model_dump()
-        task = TaskCreate(
-            title=data.get("title", None),
-            description=data.get("description", None),
-            status=data.get("status", None),
-            priority=data.get("priority", None),
-            start=data.get("start", None),
-            end=data.get("end", None),
-            projects=data.get("projects", None),
-            employees=data.get("employees", None),
-            author_id=author_id,
-        )
-        return await super().add_one(task)
+            task_res = data.model_dump(exclude_unset=True, exclude=["projects", "employees"])
+            for key, value in task_res.items():
+                setattr(task, key, value)
+            self.session.add(task)
+            await self.session.commit()
 
-    async def edit_one_task_my(self, user_id: uuid.UUID, data: BaseModel):
-        task = await get_obj_by_params(Task, {"user_id": user_id}, self.session)
-        return await super().edit_one(task.id, data)
+            if data.projects:
+                task.projects = []
+                for project_id in data.projects:
+                    project = await get_obj_by_params(Project, {"id": project_id}, self.session)
+                    project_res = task_project.insert().values(task_id=task.id, project_id=project.id)
+                    await self.session.execute(project_res)
+            if data.employees:
+                task.employees = []
+                for employee_id in data.employees:
+                    employee = await get_obj_by_params(Employee, {"id": employee_id}, self.session)
+                    employee_res = task_employee.insert().values(task_id=task.id, employee_id=employee.id)
+                    await self.session.execute(employee_res)
+
+            await self.session.commit()
+            await self.session.refresh(task)
+            return task
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except IntegrityError as e:
+            raise HTTPException(status_code=400, detail=str(e.orig).split(":")[-1].replace("\n", "").strip())
+
+    async def deactivate_one_task_my(self, self_id: uuid.UUID, author_id: uuid.UUID) -> Dict:
+        stmt = select(Task).join(Employee, Task.author_id == Employee.id).where(Employee.user_id == author_id)
+        task = await self.session.execute(stmt)
+        task = task.scalar_one_or_none()
+        if not task:
+            raise ERROR_404
+        return await super().deactivate_one(self_id)
 
 
 class EmployeeRepository(SQLAlchemyRepository):

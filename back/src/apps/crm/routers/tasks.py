@@ -59,7 +59,7 @@ async def edit_one(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_moderator),
 ):
-    return await TaskRepository(session).edit_one(task_id, task)
+    return await TaskRepository(session).edit_one_task(task_id, task, current_user.id)
 
 
 @router.delete("/{task_id}")
@@ -71,19 +71,29 @@ async def delete_one(
     return await TaskRepository(session).deactivate_one(task_id)
 
 
-@router.post("/my/{task_id}", response_model=TaskRead)
+@router.post("/my/", response_model=TaskRead)
 async def add_one_me(
     task: MyTaskCreate,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await TaskRepository(session).add_one_task_my(task, current_user.id)
+    return await TaskRepository(session).add_one_task(task, current_user.id)
 
 
 @router.patch("/my/{task_id}", response_model=TaskRead)
 async def edit_one_me(
+    task_id: uuid.UUID,
     task: MyTaskUpdate,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(check_permission_user),
 ):
-    return await TaskRepository(session).edit_one_task_my(current_user.id, task)
+    return await TaskRepository(session).edit_one_task(task_id, task, current_user.id)
+
+
+@router.delete("/my/{task_id}")
+async def delete_one_me(
+    task_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(check_permission_user),
+):
+    return await TaskRepository(session).deactivate_one_task_my(task_id, current_user.id)

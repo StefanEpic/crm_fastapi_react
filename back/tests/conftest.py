@@ -1,20 +1,42 @@
 import asyncio
+import os
 import uuid
 from typing import AsyncGenerator
 import pytest
 import redis
+from dotenv import load_dotenv, find_dotenv
 from fastapi_cache import FastAPICache
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from main import app
 from src.apps.auth.repositories import AuthRepository, UserRepository
 from src.apps.auth.schemas import UserCreate
 from src.apps.crm.repositories import DepartmentRepository, ProjectRepository
 from src.apps.crm.schemas import DepartmentCreate, ProjectCreate
-from src.db.base_db import engine, Base
+from src.db.base_db import Base, get_session
 
+env_file = find_dotenv(".env.dev")
+load_dotenv(env_file)
+DB_USER = os.environ.get("TEST_DB_USER")
+DB_PASS = os.environ.get("TEST_DB_PASS")
+DB_HOST = os.environ.get("TEST_DB_HOST")
+DB_NAME = os.environ.get("TEST_DB_NAME")
+DB_PORT = os.environ.get("TEST_DB_PORT")
+TEST_DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+engine = create_async_engine(TEST_DATABASE_URL)
+
+
+async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
+    async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as session:
+        yield session
+
+
+app.dependency_overrides[get_session] = override_get_async_session
+Base.metadata.bind = engine
 client = TestClient(app)
 
 
@@ -69,8 +91,8 @@ async def prepare_database():
         await session.commit()
 
         yield
-        # async with engine.begin() as conn:
-        #     await conn.run_sync(Base.metadata.drop_all)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture(scope="session")
