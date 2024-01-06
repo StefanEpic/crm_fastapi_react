@@ -4,7 +4,7 @@ from typing import List, Union
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from src.apps.auth.models import User, UserPermission
+from src.apps.auth.models import User
 from src.apps.auth.schemas import UserCreate, UserUpdate, ReturnTokenSchema, RefreshTokenSchema, UserRead
 from src.apps.auth.utils import Hasher, pwd_context, create_access_jwt, create_refresh_jwt, decode_jwt
 from src.base_utils.base_errors import ERROR_401, ERROR_404
@@ -84,12 +84,7 @@ class UserRepository(SQLAlchemyRepository, RepositoryWithoutInactive):
 class AuthRepository(UserRepository):
     async def get_access_token(self, data: UserCreate) -> ReturnTokenSchema:
         # check if email exists
-        stmt = select(User).where(
-            User.email == data.email,
-            User.is_active.is_(True),
-            User.is_verify.is_(True),
-            User.permission != UserPermission.none,
-        )
+        stmt = select(User).where(User.email == data.email, User.is_active.is_(True), User.is_verify.is_(True))
         user = await self.session.execute(stmt)
         user = user.scalar_one_or_none()
         if not user:
@@ -114,12 +109,7 @@ class AuthRepository(UserRepository):
         if data["mode"] != "refresh_token":
             raise ERROR_401
         # check if user exists
-        stmt = select(User).where(
-            User.email == data["email"],
-            User.is_active.is_(True),
-            User.is_verify.is_(True),
-            User.permission != UserPermission.none,
-        )
+        stmt = select(User).where(User.email == data["email"], User.is_active.is_(True), User.is_verify.is_(True))
         user = await self.session.execute(stmt)
         user = user.scalar_one_or_none()
         if not user:

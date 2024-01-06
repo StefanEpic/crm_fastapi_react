@@ -62,7 +62,7 @@ class Photo(Base):
     __table_args__ = (UniqueConstraint("employee_id"),)
 
     def __str__(self):
-        return self.employee.email
+        return str(self.path).split("/")[-1]
 
 
 class Employee(Base):
@@ -85,9 +85,9 @@ class Employee(Base):
     __table_args__ = (UniqueConstraint("user_id"),)
 
     def __str__(self) -> str:
-        return str(self.user.email)
+        return f"{self.family} {self.name[0]}.{self.surname[0]}."
 
-    @validates("first_name", "second_name", "last_name")
+    @validates("family", "name", "surname")
     def validate_name(self, key, *names):
         for name in names:
             if name:

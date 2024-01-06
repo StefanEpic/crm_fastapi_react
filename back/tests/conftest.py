@@ -57,6 +57,7 @@ async def prepare_database():
     async with async_session() as session:
         admin = UserCreate(email="admin@admin.com", password="12345")
         user = UserCreate(email="user@user.com", password="12345")
+        anonim = UserCreate(email="anonim@anonim.com", password="12345")
         employee = UserCreate(email="employee@employee.com", password="12345")
         employee2 = UserCreate(email="employee2@employee.com", password="12345")
         department1 = DepartmentCreate(title="Department1")
@@ -65,6 +66,7 @@ async def prepare_database():
         project2 = ProjectCreate(title="Project2")
         res_admin = await UserRepository(session).add_one_user(admin)
         res_user = await UserRepository(session).add_one_user(user)
+        res_anonim = await UserRepository(session).add_one_user(anonim)
         res_employee = await UserRepository(session).add_one_user(employee)
         res_employee2 = await UserRepository(session).add_one_user(employee2)
         await DepartmentRepository(session).add_one(department1)
@@ -81,6 +83,10 @@ async def prepare_database():
         res_user.permission = "user"
         session.add(res_user)
 
+        res_anonim.is_verify = True
+        res_anonim.permission = "none"
+        session.add(res_anonim)
+
         res_employee.is_verify = True
         res_employee.permission = "user"
         session.add(res_employee)
@@ -93,12 +99,6 @@ async def prepare_database():
         yield
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
-
-
-@pytest.fixture(scope="session")
-async def ac() -> AsyncGenerator[AsyncClient, None]:
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        yield ac
 
 
 async def get_token(data: UserCreate) -> str:
@@ -144,6 +144,20 @@ async def auth_ac_user() -> AsyncGenerator[AsyncClient, None]:
         auth_headers = {"Authorization": f"Bearer {token}"}
         auth_ac_user.headers.update(auth_headers)
         yield auth_ac_user
+
+
+@pytest.fixture(scope="session")
+async def anonim_ac() -> AsyncGenerator[AsyncClient, None]:
+    """
+    Create admin user
+    :return: AsyncClient
+    """
+    async with AsyncClient(app=app, base_url="http://test") as anonim_ac:
+        user_data = UserCreate(email="anonim@anonim.com", password="12345")
+        token = await get_token(user_data)
+        auth_headers = {"Authorization": f"Bearer {token}"}
+        anonim_ac.headers.update(auth_headers)
+        yield anonim_ac
 
 
 @pytest.fixture(scope="session")

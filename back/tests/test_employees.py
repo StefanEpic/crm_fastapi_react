@@ -7,6 +7,42 @@ from tests.conftest import get_model_uuid
 base_url = "/employees"
 
 
+async def test_add_one_employee_invalid_user_name(auth_ac_admin: AsyncClient):
+    user_id = await get_model_uuid(User, {"email": "employee@employee.com"})
+    department_id = await get_model_uuid(Department, {"title": "Department1"})
+
+    data = {
+        "user_id": str(user_id),
+        "family": "Family",
+        "name": "Name2000",
+        "surname": "Surname",
+        "phone": "12345",
+        "department_id": str(department_id),
+    }
+    response = await auth_ac_admin.post(base_url, json=data)
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid value for family, name or surname fields"
+
+
+async def test_add_one_employee_invalid_user_phone(auth_ac_admin: AsyncClient):
+    user_id = await get_model_uuid(User, {"email": "employee@employee.com"})
+    department_id = await get_model_uuid(Department, {"title": "Department1"})
+
+    data = {
+        "user_id": str(user_id),
+        "family": "Family",
+        "name": "Name",
+        "surname": "Surname",
+        "phone": "phone",
+        "department_id": str(department_id),
+    }
+    response = await auth_ac_admin.post(base_url, json=data)
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid value for phone field"
+
+
 async def test_add_one_employee(auth_ac_admin: AsyncClient):
     user_id = await get_model_uuid(User, {"email": "employee@employee.com"})
     department_id = await get_model_uuid(Department, {"title": "Department1"})
@@ -81,7 +117,7 @@ async def test_edit_one_employee(auth_ac_admin: AsyncClient):
     user_id = await get_model_uuid(User, {"email": "employee@employee.com"})
     uuid = str(await get_model_uuid(Employee, {"user_id": user_id}))
     uuid_url = base_url + "/" + uuid
-    data = {"family": "New Family", "name": "New Name", "surname": "New Surname"}
+    data = {"family": "Test", "name": "Test", "surname": "Test"}
     response = await auth_ac_admin.patch(uuid_url, json=data)
 
     assert response.status_code == 200
@@ -139,7 +175,7 @@ async def test_get_me(auth_ac_employee: AsyncClient):
 
 async def test_edit_me(auth_ac_employee: AsyncClient):
     uuid_url = base_url + "/me/"
-    data = {"family": "NewFamily"}
+    data = {"family": "Employee"}
     response = await auth_ac_employee.patch(uuid_url, json=data)
 
     assert response.status_code == 200
@@ -152,3 +188,21 @@ async def test_delete_me(auth_ac_employee: AsyncClient):
 
     assert response.status_code == 200
     assert response.json()["detail"] == "success"
+
+
+async def test_add_one_employee_inactive_user(auth_ac_employee: AsyncClient):
+    user_id = await get_model_uuid(User, {"email": "employee@employee.com"})
+    department_id = await get_model_uuid(Department, {"title": "Department1"})
+
+    data = {
+        "user_id": str(user_id),
+        "family": "Family",
+        "name": "Name",
+        "surname": "Surname",
+        "phone": "12345",
+        "department_id": str(department_id),
+    }
+    response = await auth_ac_employee.post(base_url, json=data)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Not found"

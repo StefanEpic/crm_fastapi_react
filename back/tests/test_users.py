@@ -26,7 +26,15 @@ async def test_get_list_users(auth_ac_user: AsyncClient):
     response = await auth_ac_user.get(base_url)
 
     assert response.status_code == 200
-    assert len(response.json()) == 2
+    assert len(response.json()) == 3
+    assert response.json()[0]["email"] is not None
+
+
+async def test_get_list_users_invalid_permissions(anonim_ac: AsyncClient):
+    response = await anonim_ac.get(base_url)
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Don't have permissions"
 
 
 async def test_get_one_user(auth_ac_admin: AsyncClient):
@@ -111,3 +119,12 @@ async def test_delete_me(auth_ac_user: AsyncClient):
 
     assert response.status_code == 200
     assert response.json()["detail"] == "success"
+
+
+async def test_get_one_user_inactive(auth_ac_admin: AsyncClient):
+    uuid = str(await get_model_uuid(User, {"email": "user@user.com"}))
+    uuid_url = base_url + "/" + uuid
+    response = await auth_ac_admin.get(uuid_url)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Not found"

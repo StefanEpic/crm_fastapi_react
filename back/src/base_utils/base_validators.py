@@ -8,7 +8,7 @@ def name_valid(name: str) -> str:
     :return: valid name
     """
     if not name.isalpha():
-        raise ValueError("Error. Invalid value for name field")
+        raise ValueError("Invalid value for family, name or surname fields")
     return name.capitalize()
 
 
@@ -20,5 +20,5 @@ def phone_valid(phone: str) -> str:
     """
     p = punctuation.replace("+", "")
     if phone.isalpha() or len(set(p) & set(phone)) > 0:
-        raise ValueError("Error. Invalid value for phone field")
+        raise ValueError("Invalid value for phone field")
     return phone
