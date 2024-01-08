@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  test:
+    container_name: test
+    image: postgres:14-alpine
+    restart: always
+    env_file:
+      - .env.dev
+    ports:
+      - "5555:5432"
+    networks:
+      - custom
+
+networks:
+  custom:
+    driver: bridge
