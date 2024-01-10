@@ -1,6 +1,6 @@
 import React, { useId } from 'react';
 
-const DefaultSelect = ({ title, helptext, options, ...props }) => {
+const DefaultSelect = ({ title, options, ...props }) => {
     const selectId = useId();
     return (
         <div>

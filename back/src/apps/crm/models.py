@@ -119,8 +119,7 @@ class Task(Base):
     description: Mapped[Optional[str]] = mapped_column(default="")
     status: Mapped[Optional[TaskStatus]] = mapped_column(default=TaskStatus.todo)
     priority: Mapped[Optional[TaskPriority]] = mapped_column(default=TaskPriority.none)
-    start: Mapped[Optional[datetime.datetime]] = mapped_column(default=datetime.datetime.utcnow)
-    end: Mapped[Optional[datetime.datetime]]
+    end: Mapped[Optional[datetime.date]]
     is_active: Mapped[bool] = mapped_column(default=True)
 
     author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employee.id"))

@@ -87,8 +87,7 @@ class MyTaskCreate(BaseModel):
     description: Optional[str] = None
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
-    start: Optional[datetime.datetime] = None
-    end: Optional[datetime.datetime] = None
+    end: Optional[datetime.date] = None
     projects: List[uuid.UUID]
     employees: List[uuid.UUID]
 
@@ -98,8 +97,7 @@ class MyTaskUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
-    start: Optional[datetime.datetime] = None
-    end: Optional[datetime.datetime] = None
+    end: Optional[datetime.date] = None
     projects: Optional[List[uuid.UUID]] = None
     employees: Optional[List[uuid.UUID]] = None
 
@@ -125,8 +123,7 @@ class TaskReadWithProjectsAndEmployees(BaseModel):
     description: Optional[str] = None
     status: TaskStatus
     priority: TaskPriority
-    start: Optional[datetime.datetime] = None
-    end: Optional[datetime.datetime] = None
+    end: Optional[datetime.date] = None
     is_active: bool
     author: EmployeeRead
     projects: List[ProjectRead]
